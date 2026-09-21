@@ -5,18 +5,45 @@ Rapproche par client, par produits du catalogue et par volume de jours, puis
 remonte pour chaque affaire ce qui a été vendu, ce que ça a réellement coûté et
 la marge constatée. C'est la matière première du chiffrage par analogie.
 
+Nouveau : la suggestion de prix à partir des lignes de factures (≤ 13 mois)
+passe par scripts/matching.py en backend (TF-IDF + stats + sources). La
+fonction find_similar_invoices y est réexportée ici pour compatibilité.
+
 Usage :
     python3 analogues.py --client 832
     python3 analogues.py --produits 107,112 --jours 2
     python3 analogues.py --client 832 --produits 107 --limit 6
+    python3 analogues.py --suggest VID_MO1 --label "Spot 60s" --client 45
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from odoo import Odoo, OdooError
+
+try:
+    from matching import (
+        CANNOT_CONFIRM,
+        DEFAULT_MONTHS,
+        DEFAULT_TOP_N,
+        compute_stats,
+        find_similar_invoices,
+    )
+except ImportError:  # exécution depuis un autre répertoire
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from matching import (
+        CANNOT_CONFIRM,
+        DEFAULT_MONTHS,
+        DEFAULT_TOP_N,
+        compute_stats,
+        find_similar_invoices,
+    )
+
+__all__ = ["cout_reel", "suggere_prix", "find_similar_invoices",
+           "compute_stats", "CANNOT_CONFIRM"]
 
 
 def cout_reel(o: Odoo, projets: list[int]) -> dict:
@@ -45,6 +72,23 @@ def cout_reel(o: Odoo, projets: list[int]) -> dict:
     return {"total": total, "par_nature": par_nature, "jours_par_personne": personnes}
 
 
+def suggere_prix(client_id: int, service_code: str, label: str = "",
+                 months: int = DEFAULT_MONTHS, top_n: int = DEFAULT_TOP_N,
+                 invoices: list[dict] | None = None) -> dict:
+    """Prix suggéré pour un service à partir des factures ≤ `months` mois.
+
+    Backend : scripts/matching.py. Retourne stats + sources, ou exactement
+    "Je ne peux pas confirmer ça" sans historique pertinent. N'invente jamais.
+    """
+    out = find_similar_invoices(
+        int(client_id),
+        [{"service_code": service_code, "label": label or service_code,
+          "qty": 1, "unit": ""}],
+        months=months, top_n=top_n, invoices=invoices,
+    )
+    return out["results"][0]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -52,7 +96,19 @@ def main():
     ap.add_argument("--produits", help="ids product.product séparés par des virgules")
     ap.add_argument("--jours", type=float, help="volume de jours visé, pour le tri")
     ap.add_argument("--limit", type=int, default=4, help="nombre d'affaires à remonter")
+    ap.add_argument("--suggest", help="service_code pour une suggestion de prix (backend matching)")
+    ap.add_argument("--label", default="", help="libellé du service pour --suggest")
+    ap.add_argument("--months", type=int, default=DEFAULT_MONTHS)
+    ap.add_argument("--top-n", type=int, default=DEFAULT_TOP_N)
     a = ap.parse_args()
+
+    if a.suggest:
+        if not a.client:
+            ap.error("--suggest exige --client")
+        print(json.dumps(suggere_prix(int(a.client), a.suggest, a.label,
+                                      months=a.months, top_n=a.top_n),
+                         ensure_ascii=False, indent=2, default=str))
+        return
 
     if not (a.client or a.produits):
         ap.error("donne au moins --client ou --produits")

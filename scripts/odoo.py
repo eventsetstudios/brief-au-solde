@@ -12,6 +12,12 @@ Si le connecteur MCP Odoo est présent dans la session, il est utilisé en prior
 En bac à sable filtré, un refus x-deny-reason sur manage.eventsetstudios.ci bascule
 automatiquement sur le MCP.
 
+Helpers ajoutés pour la proposition guidée (scripts/proposal.py) :
+    list_invoices(client_id, since_date) — lignes de factures clients, avec
+        fallback vers references/referentiel.md si Odoo est injoignable ;
+    create_dynamic_field(entity, key, type, value) — plan de création d'un champ
+        (sans écriture par défaut, confirm=True pour écrire, jamais sans accord).
+
 Usage :
     python3 odoo.py ping
     python3 odoo.py client "EXP-MOMENTUM"
@@ -19,6 +25,7 @@ Usage :
     python3 odoo.py catalogue
     python3 odoo.py equipe
     python3 odoo.py commandes --client 832 --limit 10
+    python3 odoo.py factures --client 45 --depuis 2025-08-01
 """
 from __future__ import annotations
 
@@ -31,6 +38,9 @@ from pathlib import Path
 
 CTX = {"lang": "fr_FR"}
 DEFAULTS = {"url": "https://manage.eventsetstudios.ci", "db": "odoo_db"}
+
+DYNAMIC_FIELD_TYPES = {"char", "text", "integer", "float", "boolean",
+                       "date", "datetime", "selection", "many2one"}
 
 
 class OdooError(RuntimeError):
@@ -100,6 +110,117 @@ class Odoo:
     def has_model(self, model: str) -> bool:
         """Le module maison es_production n'est pas installé partout."""
         return bool(self.search_read("ir.model", [["model", "=", model]], ["id"], limit=1))
+
+
+# ------------------------------------------------- helpers proposition guidée
+
+def list_invoices(client_id: int | None = None, since_date: str | None = None,
+                  limit: int = 200) -> dict:
+    """Lignes de factures clients pour le matching (scripts/matching.py).
+
+    Retourne {"source": "odoo"|"referentiel", "invoices": [...]} où chaque ligne
+    porte invoice_id, client_id, service_code ("PROD_<product_id>"), category,
+    label, unit_price, currency (XOF) et date.
+
+    Échec Odoo (réseau, identifiants, x-deny-reason) → fallback vers
+    references/referentiel.md via matching.referentiel_history(), source
+    annoncée comme "referentiel". N'invente jamais de chiffres.
+    """
+    try:
+        o = Odoo()
+        domain = [["move_type", "=", "out_invoice"], ["state", "=", "posted"]]
+        if client_id:
+            domain.append(["partner_id", "=", int(client_id)])
+        if since_date:
+            domain.append(["invoice_date", ">=", since_date])
+        moves = o.search_read(
+            "account.move", domain,
+            ["name", "partner_id", "invoice_date", "amount_total", "currency_id"],
+            limit=limit, order="invoice_date desc")
+        if not moves:
+            return {"source": "odoo", "invoices": []}
+        by_id = {m["id"]: m for m in moves}
+        lines = o.search_read(
+            "account.move.line",
+            [["move_id", "in", list(by_id)], ["product_id", "!=", False]],
+            ["move_id", "product_id", "name", "quantity", "price_unit",
+             "price_subtotal", "product_uom_id"],
+            limit=limit * 20)
+        out = []
+        for l in lines:
+            m = by_id.get((l.get("move_id") or [None])[0])
+            if not m or not m.get("invoice_date"):
+                continue
+            prod = l.get("product_id") or [None, ""]
+            out.append({
+                "invoice_id": m["id"],
+                "invoice_name": m.get("name"),
+                "client_id": (m.get("partner_id") or [None])[0],
+                "service_code": f"PROD_{prod[0]}",
+                "category": "",
+                "label": l.get("name") or prod[1],
+                "unit_price": float(l.get("price_unit") or 0),
+                "currency": ((m.get("currency_id") or [None, "XOF"])[1]
+                             if isinstance(m.get("currency_id"), list) else "XOF"),
+                "date": str(m["invoice_date"])[:10],
+            })
+        return {"source": "odoo", "invoices": out}
+    except Exception as exc:
+        try:
+            from matching import referentiel_history  # import tardif : pas de cycle
+        except ImportError:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from matching import referentiel_history
+        lines = referentiel_history()
+        if client_id:
+            same = [l for l in lines if l.get("client_id") == int(client_id)]
+            lines = same or lines  # sans historique client : tout le référentiel
+        return {"source": "referentiel",
+                "invoices": lines,
+                "avertissement": f"Odoo injoignable ({exc.__class__.__name__}) : "
+                                 "historique du référentiel embarqué, à annoncer."}
+
+
+def create_dynamic_field(entity: str, key: str, field_type: str = "char",
+                         value=None, confirm: bool = False,
+                         o: Odoo | None = None) -> dict:
+    """Prépare (ou crée avec confirm=True) un champ dynamique sur `entity`.
+
+    Sans confirm : aucune écriture, retourne le plan exact (modèle
+    ir.model.fields, valeurs) pour validation par Lycris — conforme à la règle
+    « proposer, faire valider, écrire ». Avec confirm=True : crée le champ
+    (jamais sans accord explicite) et retourne son id.
+    """
+    ftype = (field_type or "char").lower()
+    if ftype not in DYNAMIC_FIELD_TYPES:
+        raise ValueError(f"type {field_type!r} inconnu — choisir parmi "
+                         f"{sorted(DYNAMIC_FIELD_TYPES)}")
+    if not key or not key.replace("_", "").isalnum():
+        raise ValueError(f"clé {key!r} invalide (lettres/chiffres/_ uniquement)")
+    plan = {
+        "ok": False,
+        "action": "création de champ dynamique (aucune écriture effectuée)",
+        "model": "ir.model.fields",
+        "values": {
+            "name": f"x_{key}",
+            "model_id": f"<id ir.model de {entity}>",
+            "field_description": key.replace("_", " ").capitalize(),
+            "ttype": ftype,
+            "state": "manual",
+        },
+        "valeur_initiale": value,
+        "validation_requise": "relancer avec confirm=True après accord explicite",
+    }
+    if not confirm:
+        return plan
+    o = o or Odoo()
+    if not o.has_model(entity):
+        raise OdooError(f"modèle {entity} introuvable dans Odoo")
+    models = o.search_read("ir.model", [["model", "=", entity]], ["id"], limit=1)
+    vals = dict(plan["values"], model_id=models[0]["id"])
+    new_id = o.kw("ir.model.fields", "create", [vals])
+    return {"ok": True, "model": "ir.model.fields", "id": new_id,
+            "name": vals["name"], "valeur_initiale": value}
 
 
 # ---------------------------------------------------------------- commandes CLI
@@ -217,6 +338,12 @@ def cmd_commandes(o: Odoo, a):
     print(json.dumps(cmds, ensure_ascii=False, indent=2, default=str))
 
 
+def cmd_factures(a):
+    print(json.dumps(list_invoices(client_id=a.client, since_date=a.depuis,
+                                   limit=a.limit),
+                     ensure_ascii=False, indent=2, default=str))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -228,8 +355,15 @@ def main():
     sub.add_parser("equipe")
     p = sub.add_parser("commandes")
     p.add_argument("--client"); p.add_argument("--limit", type=int, default=20)
+    p = sub.add_parser("factures")
+    p.add_argument("--client", type=int, help="id res.partner (optionnel)")
+    p.add_argument("--depuis", help="date minimale AAAA-MM-JJ (optionnel)")
+    p.add_argument("--limit", type=int, default=200)
     a = ap.parse_args()
 
+    if a.cmd == "factures":  # helper avec fallback : pas besoin d'Odoo direct
+        cmd_factures(a)
+        return
     handlers = {"ping": cmd_ping, "client": cmd_client, "projet": cmd_projet,
                 "catalogue": cmd_catalogue, "equipe": cmd_equipe, "commandes": cmd_commandes}
     try:

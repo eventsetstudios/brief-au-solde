@@ -1,0 +1,12 @@
+# Dépendances du skill brief-au-solde.
+# Le matching (scripts/matching.py) est volontairement pure-python (stdlib
+# uniquement) : aucune dépendance lourde à installer sur la machine de Lycris
+# ou le NAS. Seul pytest est requis, pour les tests.
+pytest>=7
+
+# Variante optionnelle (non requise, non utilisée par défaut) : si le volume
+# de factures l'exige un jour, on pourra basculer le scoring TF-IDF sur
+# scikit-learn en gardant la même interface find_similar_invoices() :
+# scikit-learn>=1.3
+# numpy>=1.24
+# pandas>=2.0

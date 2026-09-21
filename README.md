@@ -81,11 +81,18 @@ Vérification :
 │   └── modeles-affaires.md # Modèles par type d'affaire (dispositif/équipe/tâches/lignes)
 ├── evals/                # 9 cas de test (commande simple, tournée, sans RCCM, apporteur…)
 └── scripts/
-    ├── odoo.py           # Client MCP/XML-RPC : ping, client, projet, catalogue, equipe
-    ├── analogues.py      # Affaires comparables (montant, jours, marge)
+    ├── odoo.py           # Client MCP/XML-RPC : ping, client, projet, catalogue, equipe + list_invoices, create_dynamic_field
+    ├── analogues.py      # Affaires comparables (montant, jours, marge) + suggestions prix (--suggest, backend matching)
+    ├── matching.py       # Matching factures ≤ 13 mois : normalisation, TF-IDF, scoring, stats + sources
+    ├── proposal.py       # Wizard proposition guidée : proposal.json + audit (--start, --input, --to-proforma)
     ├── equipe.py         # Disponibilité + expérience + délais + coût
-    ├── proforma.py       # Génère XLSX + PDF à la charte (TVA 0 si ≥ 01/10/2026)
+    ├── proforma.py       # Génère XLSX + PDF à la charte (TVA 0 si ≥ 01/10/2026, consomme proposal.json via --to-proforma)
     └── commande.py       # Fiche JSON → plan dry-run puis exécution cascade
+├── migrations/
+│   └── 001_add_pricing_history_and_dynamic_fields.sql  # UP + DOWN (PostgreSQL + SQLite)
+├── tests/                # pytest : test_matching.py (cas A/B/C) + test_proposal.py (migration, audit, proforma)
+├── requirements.txt      # pytest seul (matching = stdlib ; variante sklearn documentée)
+└── logs/                 # proposals.log — audit JSON (git-ignoré via *.log)
 ```
 
 ## Prérequis Odoo
@@ -123,13 +130,82 @@ Sans Odoo (ou `x-deny-reason` sur le domaine en bac à sable filtré), le skill 
 python3 scripts/odoo.py ping                          # test connexion
 python3 scripts/odoo.py client 42                     # fiche client
 python3 scripts/odoo.py projet 123                    # état complet d'une affaire
+python3 scripts/odoo.py factures --client 45          # lignes de factures (fallback référentiel si échec)
 python3 scripts/analogues.py --client 832 --produits 107,112 --jours 2
+python3 scripts/analogues.py --suggest VID_MO1 --label "Spot 60s" --client 45  # prix suggéré
 python3 scripts/equipe.py --du 2026-10-12 --au 2026-10-13 --roles cadreur,drone
+python3 scripts/proposal.py --start                   # wizard proposition guidée
+python3 scripts/proposal.py --input brief.json --output proposal.json
+python3 scripts/proposal.py --to-proforma proposal.json --numero PRO-2026-014  # vers proforma.py
 python3 scripts/proforma.py --data proforma.json      # XLSX + PDF
 python3 scripts/commande.py --exemple > fiche.json    # fiche modèle
 python3 scripts/commande.py --fichier fiche.json --dry-run   # plan sans écrire
 python3 scripts/commande.py --fichier fiche.json --executer  # écrit après validation
+pytest tests/ -q                                      # 19 tests matching + proposal + migration
 ```
+
+## Proposition guidée (matching factures ≤ 13 mois)
+
+`scripts/proposal.py --start` déroule le wizard en 5 étapes (client → contexte →
+livrables → tarification → résumé). Sans historique pertinent, il répond exactement
+« Je ne peux pas confirmer ça » et demande une saisie manuelle — jamais de prix inventé.
+Chaque suggestion porte ses sources (IDs factures, dates) et stats ; chaque calcul est
+audité dans `logs/proposals.log`. Détail : section « Proposition guidée » de `SKILL.md`.
+
+Exemple d'entrée (`brief.json`) :
+
+```json
+{
+  "brief_id": 123,
+  "client_id": 45,
+  "services": [
+    { "service_code": "VID_MO1", "label": "Spot 60s", "qty": 1, "unit": "video" },
+    { "service_code": "MONT_H", "label": "Montage horaire", "qty": 10, "unit": "hour" }
+  ],
+  "currency": "XOF"
+}
+```
+
+Exemple de sortie (`proposal.json`, item confirmé) :
+
+```json
+{
+  "suggested_items": [
+    {
+      "service_code": "VID_MO1",
+      "label": "Spot 60s",
+      "qty": 1,
+      "unit_price_suggested": 750000,
+      "stats": {"mean": 720000, "median": 750000, "min": 600000, "max": 800000, "std": 81923, "count": 4},
+      "source_invoices": [{"invoice_id": 789, "date": "2026-03-12", "amount": 750000}]
+    }
+  ],
+  "notes": "Basé sur 4 factures similaires (≤13 mois)."
+}
+```
+
+Scoring : cosinus TF-IDF (descriptions) + 1,0 même `service_code` + 0,3 même
+catégorie, filtre ≤ 13 mois, seuil 0,45, priorité au même client, prix suggéré =
+médiane. Implémentation pure-python (stdlib) — variante `scikit-learn` possible à
+interface identique si le volume l'exige un jour.
+
+Checklist QA :
+
+- [ ] Migrations OK & rollback testés (`pytest tests/test_proposal.py -q -k migration`)
+- [ ] Tests unitaires passant (`pytest tests/ -q` — 19 tests)
+- [ ] Cas A/B/C couverts (client avec facture / sans facture mais ≤ 13 mois / aucune)
+- [ ] Logs d'audit présents et lisibles (`logs/proposals.log`, JSON par ligne)
+- [ ] Texte exact « Je ne peux pas confirmer ça » implémenté
+- [ ] Fallback Odoo → référentiel embarqué documenté (source annoncée)
+
+Guide d'intégration (3 lignes) :
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && pytest tests/ -q
+```
+
+Identifiants Odoo dans `~/.odoo_es.json` (`url`, `db`, `user`, `password`) ou
+variables `ODOO_URL` / `ODOO_DB` / `ODOO_USER` / `ODOO_PASSWORD` — jamais dans le repo.
 
 Routines solopreneur (voir `references/routines.md`) :
 

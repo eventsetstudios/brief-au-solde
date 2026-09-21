@@ -1,6 +1,6 @@
 ---
 name: brief-au-solde
-description: Conduit une affaire d'Évents & Studios de bout en bout selon le workflow « du brief au solde » — interroge Odoo, pose les questions de cadrage qui manquent, chiffre une proforma par analogie avec les affaires déjà réalisées, propose une équipe selon disponibilités et historique d'exécution, puis crée devis, projet, tâches et affectations une fois que l'utilisateur a validé. Gère aussi les commandes (« j'ai une commande »), les opportunités CRM, les sessions/missions, la logistique T&E, la trésorerie, le point du lundi, la clôture de mission et le solde/FNE. À utiliser dès qu'il est question d'une demande client entrante, d'une commande, d'un devis ou d'une proforma, d'un chiffrage, d'un cadrage de tournage, d'une opportunité CRM, d'une mission ou session, d'une dépense, de trésorerie, de l'avancement ou de la rentabilité d'un projet, d'une livraison, d'un acompte ou d'un solde à facturer. Déclencher même si Odoo n'est jamais nommé — « j'ai une commande pour X à Bouaké », « nouvelle demande de Y », « point du lundi », « clôture la mission », « j'ai dépensé 50 000 pour le transport », « où en est l'argent », « je peux facturer ? », « bilan de l'affaire » sont tous des entrées de ce skill.
+description: Conduit une affaire d'Évents & Studios de bout en bout selon le workflow « du brief au solde » — interroge Odoo, pose les questions de cadrage qui manquent, chiffre une proforma par analogie avec les affaires déjà réalisées, construit des propositions guidées à partir des factures ≤ 13 mois (`proposal.py`), propose une équipe selon disponibilités et historique d'exécution, puis crée devis, projet, tâches et affectations une fois que l'utilisateur a validé. Gère aussi les commandes (« j'ai une commande »), les opportunités CRM, les sessions/missions, la logistique T&E, la trésorerie, le point du lundi, la clôture de mission et le solde/FNE. À utiliser dès qu'il est question d'une demande client entrante, d'une commande, d'un devis ou d'une proforma, d'un chiffrage, d'une proposition guidée ou d'une suggestion de prix, d'un cadrage de tournage, d'une opportunité CRM, d'une mission ou session, d'une dépense, de trésorerie, de l'avancement ou de la rentabilité d'un projet, d'une livraison, d'un acompte ou d'un solde à facturer. Déclencher même si Odoo n'est jamais nommé — « j'ai une commande pour X à Bouaké », « nouvelle demande de Y », « propose un prix pour un spot 60s », « point du lundi », « clôture la mission », « j'ai dépensé 50 000 pour le transport », « où en est l'argent », « je peux facturer ? », « bilan de l'affaire » sont tous des entrées de ce skill.
 ---
 
 # Du brief au solde
@@ -114,6 +114,33 @@ opportunité CRM → devis → confirmation → facture d'acompte (brouillon) �
 `day_rate_is_override`) / tâches par étape + 4 tâches satellites par session → responsables
 inscrits (`project.project.user_id` + `es.mission` — `fields_get` avant d'écrire, signaler si
 pas de compte Odoo) → feuilles de service + activités de rappel. Voir `references/workflow-commande.md`.
+
+---
+
+## Proposition guidée à partir des factures (matching ≤ 13 mois)
+
+Pour « propose un prix pour… », « combien pour un spot 60s ? » : wizard en 5 étapes
+(client → contexte → livrables → tarification → résumé) qui réutilise les factures
+du client si disponibles, sinon toutes les factures ≤ 13 mois, et propose des
+montants de référence avec sources et stats.
+
+```bash
+python3 scripts/proposal.py --start                                    # wizard CLI
+python3 scripts/proposal.py --input brief.json --output proposal.json  # API JSON
+python3 scripts/proposal.py --to-proforma proposal.json --numero PRO-2026-014  # vers proforma.py
+```
+
+Règles impératives :
+- chaque suggestion porte ses **sources** (IDs factures, dates) et ses **stats**
+  (moyenne, médiane, min, max, écart-type, effectif) — prix suggéré = médiane ;
+- sans historique pertinent (score < 0,45) : répondre exactement
+  **« Je ne peux pas confirmer ça »** et demander une saisie manuelle — jamais de prix inventé ;
+- champ manquant (client, service, taxe…) : section « création dynamique de champ »
+  avec confirmation explicite avant de continuer ;
+- chaque calcul écrit un audit dans `logs/proposals.log`
+  (`proposal_id`, `computed_at`, `algorithm_version`, `source_invoice_ids`, `computed_by`) ;
+- changements DB uniquement via `migrations/` (UP + DOWN testés) ;
+- Odoo injoignable → fallback `references/referentiel.md`, annoncé dans la sortie.
 
 ---
 
@@ -260,8 +287,10 @@ d'abord. Vérifie en une lecture :
 
 | Script | Ce qu'il fait |
 |---|---|
-| `scripts/odoo.py` | Client XML-RPC/MCP + commandes : `ping`, `client`, `projet`, `catalogue`, `equipe`, `commandes` |
-| `scripts/analogues.py` | Affaires comparables (montant, jours, marge) |
+| `scripts/odoo.py` | Client XML-RPC/MCP + commandes : `ping`, `client`, `projet`, `catalogue`, `equipe`, `commandes`, `factures` ; helpers `list_invoices`, `create_dynamic_field` |
+| `scripts/analogues.py` | Affaires comparables (montant, jours, marge) + suggestions prix factures (`--suggest`, backend `matching.py`) |
+| `scripts/matching.py` | Matching factures ≤ 13 mois : normalisation, TF-IDF, scoring, stats + sources |
+| `scripts/proposal.py` | Wizard proposition guidée : `proposal.json` + audit (`--start`, `--input`, `--to-proforma`) |
 | `scripts/equipe.py` | Disponibilité + expérience + délais + coût |
 | `scripts/proforma.py` | Génère XLSX + PDF à la charte |
 | `scripts/commande.py` | Fiche commande JSON → plan d'écriture (`--dry-run` par défaut) puis exécution (`--executer`) |
