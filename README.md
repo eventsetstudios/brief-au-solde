@@ -78,13 +78,15 @@ Vérification :
 │   ├── es_finance.md     # Trésorerie, budgets, alertes, marge sur la compta
 │   ├── comptabilite.md   # Plan comptable, journaux, FNE, TVA octobre 2026
 │   ├── routines.md       # 9 commandes en une phrase + automatismes solopreneur
-│   └── modeles-affaires.md # Modèles par type d'affaire (dispositif/équipe/tâches/lignes)
+│   ├── modeles-affaires.md # Modèles par type d'affaire (dispositif/équipe/tâches/lignes)
+│   └── production.md     # Standard studio : arborescence NAS, nommage, pipeline, 3 phases, tri auto
 ├── evals/                # 9 cas de test (commande simple, tournée, sans RCCM, apporteur…)
 └── scripts/
     ├── odoo.py           # Client MCP/XML-RPC : ping, client, projet, catalogue, equipe + list_invoices, create_dynamic_field
     ├── analogues.py      # Affaires comparables (montant, jours, marge) + suggestions prix (--suggest, backend matching)
     ├── matching.py       # Matching factures ≤ 13 mois : normalisation, TF-IDF, scoring, stats + sources
     ├── proposal.py       # Wizard proposition guidée : proposal.json + audit (--start, --input, --to-proforma)
+    ├── scaffold.py       # Scaffold NAS : arborescence, tri auto, nommage, miroir Odoo, 3 phases
     ├── equipe.py         # Disponibilité + expérience + délais + coût
     ├── proforma.py       # Génère XLSX + PDF à la charte (TVA 0 si ≥ 01/10/2026, consomme proposal.json via --to-proforma)
     └── commande.py       # Fiche JSON → plan dry-run puis exécution cascade
@@ -137,6 +139,10 @@ python3 scripts/equipe.py --du 2026-10-12 --au 2026-10-13 --roles cadreur,drone
 python3 scripts/proposal.py --start                   # wizard proposition guidée
 python3 scripts/proposal.py --input brief.json --output proposal.json
 python3 scripts/proposal.py --to-proforma proposal.json --numero PRO-2026-014  # vers proforma.py
+python3 scripts/scaffold.py --init --client NESTLE --projet MAGGI_TVC --jours 2026-11-14  # dry-run arborescence
+python3 scripts/scaffold.py --trier J01_2026-11-14_A-CAM_001.BRAW film_V02.mp4 --client X --projet Y
+python3 scripts/scaffold.py --verifier-nom NESTLE_MAGGI_TVC_V1_2026-09-21.mp4
+python3 scripts/scaffold.py --statut --dossier-actif 04_pre-rendus/V02
 python3 scripts/proforma.py --data proforma.json      # XLSX + PDF
 python3 scripts/commande.py --exemple > fiche.json    # fiche modèle
 python3 scripts/commande.py --fichier fiche.json --dry-run   # plan sans écrire
@@ -188,6 +194,17 @@ Scoring : cosinus TF-IDF (descriptions) + 1,0 même `service_code` + 0,3 même
 catégorie, filtre ≤ 13 mois, seuil 0,45, priorité au même client, prix suggéré =
 médiane. Implémentation pure-python (stdlib) — variante `scikit-learn` possible à
 interface identique si le volume l'exige un jour.
+
+## Standard studio (NAS + nommage + pipeline)
+
+`references/production.md` + `scripts/scaffold.py` : arborescence
+`CLIENT/année/Projet/01_creation → 05_rendus` générée d'un coup (`--init`,
+`--appliquer` pour écrire), tri auto au dépôt (rush → `02_footages`, `Vxx` →
+`04_pre-rendus`, master/final sans version → `05_rendus`), nommage
+`CLIENT_PROJET_TYPE_VERSION_DATE.ext` contrôlé (`--verifier-nom`), statut Odoo =
+miroir du dossier actif (`--statut`), facturation en 3 phases
+pré-prod/prod/post-prod (`--phases`). Rushs immutables, versions V01/V02…,
+toute sortie : résumé → découpage → planning → budget → dossiers → risques.
 
 Checklist QA :
 

@@ -1,6 +1,7 @@
 ---
 name: brief-au-solde
-description: Conduit une affaire d'Évents & Studios de bout en bout selon le workflow « du brief au solde » — interroge Odoo, pose les questions de cadrage qui manquent, chiffre une proforma par analogie avec les affaires déjà réalisées, construit des propositions guidées à partir des factures ≤ 13 mois (`proposal.py`), propose une équipe selon disponibilités et historique d'exécution, puis crée devis, projet, tâches et affectations une fois que l'utilisateur a validé. Gère aussi les commandes (« j'ai une commande »), les opportunités CRM, les sessions/missions, la logistique T&E, la trésorerie, le point du lundi, la clôture de mission et le solde/FNE. À utiliser dès qu'il est question d'une demande client entrante, d'une commande, d'un devis ou d'une proforma, d'un chiffrage, d'une proposition guidée ou d'une suggestion de prix, d'un cadrage de tournage, d'une opportunité CRM, d'une mission ou session, d'une dépense, de trésorerie, de l'avancement ou de la rentabilité d'un projet, d'une livraison, d'un acompte ou d'un solde à facturer. Déclencher même si Odoo n'est jamais nommé — « j'ai une commande pour X à Bouaké », « nouvelle demande de Y », « propose un prix pour un spot 60s », « point du lundi », « clôture la mission », « j'ai dépensé 50 000 pour le transport », « où en est l'argent », « je peux facturer ? », « bilan de l'affaire » sont tous des entrées de ce skill.
+description: Conduit une affaire d'Évents & Studios de bout en bout selon le workflow « du brief au solde » — interroge Odoo, pose les questions de cadrage qui manquent, chiffre une proforma par analogie avec les affaires déjà réalisées, construit des propositions guidées à partir des factures ≤ 13 mois (`proposal.py`), propose une équipe selon disponibilités et historique d'exécution, puis crée devis, projet, tâches et affectations une fois que l'utilisateur a validé. Gère aussi les commandes (« j'ai une commande »), les opportunités CRM, les sessions/missions, la logistique T&E, la trésorerie, le point du lundi, la clôture de mission et le solde/FNE. À utiliser dès qu'il est question d'une demande client entrante, d'une commande, d'un devis ou d'une proforma, d'un chiffrage, d'une proposition guidée ou d'une suggestion de prix, d'une structure
+de projet NAS ou d'un nommage de fichiers, d'un cadrage de tournage, d'une opportunité CRM, d'une mission ou session, d'une dépense, de trésorerie, de l'avancement ou de la rentabilité d'un projet, d'une livraison, d'un acompte ou d'un solde à facturer. Déclencher même si Odoo n'est jamais nommé — « j'ai une commande pour X à Bouaké », « nouvelle demande de Y », « propose un prix pour un spot 60s », « point du lundi », « clôture la mission », « j'ai dépensé 50 000 pour le transport », « où en est l'argent », « je peux facturer ? », « bilan de l'affaire » sont tous des entrées de ce skill.
 ---
 
 # Du brief au solde
@@ -144,7 +145,28 @@ Règles impératives :
 
 ---
 
-## Phase A — Comprendre la demande (étapes 01 et 06)
+## Standard studio — arborescence NAS, nommage, pipeline (réf. `references/production.md`)
+
+Tout projet suit l'arborescence `CLIENT/année/Nom_Projet/01_creation → 05_rendus`,
+le nommage `CLIENT_PROJET_TYPE_VERSION_DATE.ext` et le pipeline
+brief → BAT → tournage → montage → validation → livraison, avec facturation en
+3 phases (pré-prod / prod / post-prod, T&E en ligne séparée).
+
+```bash
+python3 scripts/scaffold.py --init --client NESTLE --projet MAGGI_TVC --jours 2026-11-14,2026-11-15  # dry-run
+python3 scripts/scaffold.py --init --client NESTLE --projet MAGGI_TVC --jours 2026-11-14 --root /Volumes/NAS --appliquer
+python3 scripts/scaffold.py --trier J01_2026-11-14_A-CAM_001.BRAW film_V02.mp4 --client X --projet Y  # tri auto
+python3 scripts/scaffold.py --verifier-nom NESTLE_MAGGI_TVC_V1_2026-09-21.mp4
+python3 scripts/scaffold.py --statut --dossier-actif 04_pre-rendus/V02   # miroir Odoo
+python3 scripts/scaffold.py --phases --projet "Spot 60s"                 # squelette 3 phases
+```
+
+Règles : rushs IMMUTABLES, versions V01/V02…, versionné → `04_pre-rendus`
+(jamais un final), master/final sans version → `05_rendus`, statut Odoo =
+miroir du dossier actif. Toute sortie suit l'ordre : résumé → découpage →
+planning → budget → structure dossiers → risques.
+
+---
 
 C'est la phase où l'on gagne ou perd l'affaire. Cherche d'abord dans Odoo (client, historique,
 affaires du même type), puis ne pose que ce qui manque et change le prix, l'équipe, les dates
@@ -284,6 +306,7 @@ d'abord. Vérifie en une lecture :
 | `references/comptabilite.md` | Comptabilité/fiscalité — plan comptable, FNE, TVA octobre 2026 |
 | `references/routines.md` | Routines solopreneur — 9 commandes en une phrase + automatismes |
 | `references/modeles-affaires.md` | Modèles par type d'affaire — dispositif/équipe/tâches/lignes par défaut |
+| `references/production.md` | Standard studio — arborescence NAS, nommage, pipeline, 3 phases, tri auto |
 
 | Script | Ce qu'il fait |
 |---|---|
@@ -291,6 +314,7 @@ d'abord. Vérifie en une lecture :
 | `scripts/analogues.py` | Affaires comparables (montant, jours, marge) + suggestions prix factures (`--suggest`, backend `matching.py`) |
 | `scripts/matching.py` | Matching factures ≤ 13 mois : normalisation, TF-IDF, scoring, stats + sources |
 | `scripts/proposal.py` | Wizard proposition guidée : `proposal.json` + audit (`--start`, `--input`, `--to-proforma`) |
+| `scripts/scaffold.py` | Scaffold NAS : arborescence (`--init`), tri auto (`--trier`), nommage (`--verifier-nom`), miroir Odoo (`--statut`), 3 phases (`--phases`) |
 | `scripts/equipe.py` | Disponibilité + expérience + délais + coût |
 | `scripts/proforma.py` | Génère XLSX + PDF à la charte |
 | `scripts/commande.py` | Fiche commande JSON → plan d'écriture (`--dry-run` par défaut) puis exécution (`--executer`) |
