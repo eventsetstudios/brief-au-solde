@@ -1,0 +1,34 @@
+{
+  "cas": "Commande dont le chargé de mission désigné n'a pas de compte Odoo (prestataire sans accès)",
+  "attendu": "Signalement + proposition d'ouverture d'accès ou désignation d'un utilisateur existant, sans créer de compte seul",
+  "fiche": {
+    "client": {"id": 832, "nom": "EXP-MOMENTUM", "rccm": "CI-ABJ-2020-B-12345", "cc": "1234567A"},
+    "opportunite": {"id": null, "nom": "Tournée — chargé local sans compte"},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Tournage Bouaké avec prestataire local comme chargé de mission", "type_affaire": "tournée", "livrables": "100 photos, J+5", "droits": "Réseaux", "corrections_inclus": 2, "hors_perimetre": ""},
+    "sessions": [{"nom": "Étape Bouaké", "date_start": "2026-11-20 08:00:00", "date_stop": "2026-11-20 18:00:00", "lieu": "Bouaké", "ville": "Bouaké", "type": "tournage"}],
+    "missions": [{"nom": "Mission Bouaké", "ville": "Bouaké", "date_depart": "2026-11-19", "date_retour": "2026-11-21", "logistique": {"transport": 60000, "hebergement": 80000, "restauration": 30000}}],
+    "responsables": {
+      "charge_projet": {"user_id": 5, "nom": "Frédéric N'guessan"},
+      "charges_mission": [{"mission": "Mission Bouaké", "user_id": 9999, "nom": "Prestataire Local Bouaké (sans compte)"}]
+    },
+    "equipe": [{"role": "photographe local", "role_id": 2, "titulaire": {"partner_id": 9999, "day_rate": 20000, "canal": "vendor_bill", "nom": "Prestataire Local Bouaké"}}],
+    "argent": {
+      "lignes": [
+        {"product_id": 96, "designation": "Captation", "qte": 1, "pu": 600000},
+        {"product_id": 108, "designation": "Frais T&E", "qte": 1, "pu": 170000}
+      ],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 120000
+    },
+    "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-11-20"}
+  },
+  "verifications": [
+    "plan.validations contient alerte : 'user_id 9999 sans res.users — prestataire sans accès'",
+    "cascade : lecture fields_get sur es.mission avant écriture ; champ responsable détecté mais user_id invalide → signalement",
+    "propose deux options : (a) ouvrir un accès selon matrice des droits, (b) désigner un utilisateur existant (ex. Frédéric) comme chargé de mission",
+    "ne crée AUCUN res.users seul — garde-fou respecté",
+    "dry-run n'écarte pas la fiche ; --executer refuse ou crée avec warning et laisse le champ vide + activité 'à corriger'"
+  ]
+}

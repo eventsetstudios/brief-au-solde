@@ -1,0 +1,30 @@
+{
+  "cas": "Point du lundi — affaires en cours, retards, semaine à venir, argent, FNE, responsables",
+  "attendu": "Synthèse d'une page : par étape, tâches en retard, sessions/missions de la semaine, encaissements, FNE, projets sans chargé / missions sans chargé",
+  "routine": "point du lundi",
+  "lectures": [
+    "project.project + project.task (par étape, retard, sans responsable)",
+    "es.shooting / es.mission de la semaine (jours + responsables)",
+    "es_finance : Trésorerie (3 scénarios), Répartition, Alertes, Emprunts/échéances",
+    "account.move : encaissements attendus (factures en attente), factures à émettre",
+    "es.deal : FNE en attente (is_closed false mais solde encaissé)",
+    "es.crew.ledger : dettes intervenants",
+    "projets sans user_id / missions sans chargé"
+  ],
+  "produit_attendu": {
+    "affaires_par_etape": "Pré-prod X, Prod Y, Post-prod Z, Validation W, Livré V",
+    "taches_en_retard": "liste avec échéance et responsable",
+    "semaine": "lun. 29/09 — dim. 05/10 : 2 sessions (mar. Grand-Bassam, ven. Abidjan) + 1 mission",
+    "alertes_es_finance": "dépassement budget X, freelance sans projet Y, échéance prêt BMF dans 5j",
+    "encaissements": "Facture PUB-001 1 652 000 due le 02/10, facture XXX solde 400 000",
+    "fne_en_attente": "Grand-Bassam 1 200 000 — payé le 10/08, FNE non émise",
+    "resp_manquant": "Projet MAGGI sans chargé de projet ; Mission Bouaké sans chargé de mission"
+  },
+  "propose_d_ecrire": [
+    "mail.activity : relance acompte, confirmation prestataires, J−2, livraison, solde, FNE — en un lot (une validation pour N rappels)"
+  ],
+  "garde_fous": [
+    "Ne pas envoyer de relance ; préparer le brouillon",
+    "Ne pas afficher la marge à l'équipe — synthèse marge réservée à la direction"
+  ]
+}

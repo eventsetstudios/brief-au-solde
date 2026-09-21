@@ -181,8 +181,18 @@ Produit le XLSX et le PDF à la charte, avec le bloc d'identification légale de
 }
 ```
 
-Mets `"tva": 0` quand le client est facturé sans TVA — c'est le cas d'EXP-MOMENTUM sur les deux
-affaires 2026. Vérifie plutôt que de reconduire par habitude.
+### TVA — règle d'octobre 2026
+
+Depuis le **01/10/2026, plus aucune TVA facturée** : toute facture ou tout devis daté du
+01/10/2026 ou après sort avec `"tva": 0` (tax_ids vide). Le taux historique de 18 % ne
+s'applique plus qu'aux pièces antérieures. **Ne pas reconduire la TVA par habitude** —
+vérifie la date. Le skill signale systématiquement le cas limite « acompte avant octobre
+avec TVA / solde après sans » et laisse Lycris arbitrer (voir `references/comptabilite.md`).
+
+```json
+"tva": 0,
+```
 
 Le devis n'est créé dans Odoo (`sale.order` en brouillon) que si Lycris le demande, et il n'est
-jamais confirmé ni envoyé par le skill.
+jamais confirmé ni envoyé par le skill. Si la commande passe par le mode « j'ai une commande »,
+le devis est créé depuis l'opportunité CRM (voir `references/workflow-commande.md`).

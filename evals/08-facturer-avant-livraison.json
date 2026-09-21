@@ -1,0 +1,24 @@
+{
+  "cas": "Demande 'je peux facturer ?' avant livraison actée — refus",
+  "attendu": "Contrôle NOK : livraison non actée → refuser de facturer, proposer de consolider les retours et faire valider la livraison",
+  "routine": "je peux facturer ?",
+  "entree": "Projet 290, solde 240 000 dû à 30j, mais tâches Validation client et Livré non closes",
+  "lectures": [
+    "project.task : stage Livré non atteint, validation client en cours",
+    "res.partner : RCCM/CC présents (OK)",
+    "sale.order : solde 240 000 (30% de 800 000), échéance J+30",
+    "account.move : acompte 560 000 déjà facturé (70%)",
+    "es.deal : FNE non émise"
+  ],
+  "produit_attendu": {
+    "verdict": "NON — livraison non actée par écrit",
+    "details": "Validation client en cours (2e tour non validé). Livraison doit être actée (PV ou validation portail) pour ouvrir le droit au solde.",
+    "montant_attendu": "240 000 F, échéance 30 jours après facturation",
+    "prochaines_etapes": "Consolider les retours en une liste datée, corriger dans le périmètre (2 tours inclus), faire valider la livraison, puis facturer depuis la même commande (lettrer l'acompte)"
+  },
+  "propose_d_ecrire": [],
+  "garde_fous": [
+    "Ne pas créer account.move solde en brouillon tant que livraison non actée — le proposer seulement après validation",
+    "Si hors périmètre : chiffrer l'avenant au lieu de corriger en silence"
+  ]
+}

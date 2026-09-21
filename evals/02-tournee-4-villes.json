@@ -1,0 +1,53 @@
+{
+  "cas": "Tournée 4 villes — 4 étapes, 4 missions, 4 chargés de mission, prestataires locaux",
+  "attendu": "4 sessions, 4 missions, 4 charges de mission, T&E séparée, marge 65%+, 16 tâches satellites",
+  "fiche": {
+    "client": {"id": 832, "nom": "EXP-MOMENTUM COTE D'IVOIRE", "rccm": "CI-ABJ-2020-B-12345", "cc": "1234567A"},
+    "opportunite": {"id": null, "nom": "Tournée DABOSA-like — 4 villes", "revenu_attendu": 5440000, "probabilite": 80, "date_cloture": "2026-07-01"},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Captation photo/vidéo 4 villes, prestataires locaux", "type_affaire": "tournée", "livrables": "Par ville : 100 photos + capsule 1 min, J+7", "droits": "Réseaux 12 mois", "corrections_inclus": 2, "hors_perimetre": "Habillage 3D"},
+    "sessions": [
+      {"nom": "Étape 1 Dabou", "date_start": "2026-07-04 08:00:00", "date_stop": "2026-07-04 18:00:00", "lieu": "Dabou centre", "ville": "Dabou", "type": "tournage"},
+      {"nom": "Étape 2 Bouaké", "date_start": "2026-07-12 08:00:00", "date_stop": "2026-07-12 18:00:00", "lieu": "Bouaké centre", "ville": "Bouaké", "type": "tournage"},
+      {"nom": "Étape 3 Abengourou", "date_start": "2026-07-19 08:00:00", "date_stop": "2026-07-19 18:00:00", "lieu": "Abengourou centre", "ville": "Abengourou", "type": "tournage"},
+      {"nom": "Étape 4 San Pédro", "date_start": "2026-07-26 08:00:00", "date_stop": "2026-07-26 18:00:00", "lieu": "San Pédro centre", "ville": "San Pédro", "type": "tournage"}
+    ],
+    "missions": [
+      {"nom": "Mission Dabou", "ville": "Dabou", "date_depart": "2026-07-03", "date_retour": "2026-07-05", "logistique": {"transport": 25000, "hebergement": 30000, "restauration": 15000, "fret": 5000}},
+      {"nom": "Mission Bouaké", "ville": "Bouaké", "date_depart": "2026-07-11", "date_retour": "2026-07-13", "logistique": {"transport": 60000, "hebergement": 80000, "restauration": 30000, "fret": 10000}},
+      {"nom": "Mission Abengourou", "ville": "Abengourou", "date_depart": "2026-07-18", "date_retour": "2026-07-20", "logistique": {"transport": 60000, "hebergement": 80000, "restauration": 30000, "fret": 10000}},
+      {"nom": "Mission San Pédro", "ville": "San Pédro", "date_depart": "2026-07-25", "date_retour": "2026-07-27", "logistique": {"transport": 50000, "hebergement": 70000, "restauration": 25000, "fret": 10000}}
+    ],
+    "responsables": {
+      "charge_projet": {"user_id": 5, "nom": "Frédéric N'guessan"},
+      "charges_mission": [
+        {"mission": "Mission Dabou", "user_id": 5, "nom": "Frédéric N'guessan"},
+        {"mission": "Mission Bouaké", "user_id": 5, "nom": "Frédéric N'guessan"},
+        {"mission": "Mission Abengourou", "user_id": 7, "nom": "Modeste Ahibo"},
+        {"mission": "Mission San Pédro", "user_id": 7, "nom": "Modeste Ahibo"}
+      ]
+    },
+    "equipe": [
+      {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste"}},
+      {"role": "photographe local", "role_id": 2, "titulaire": {"partner_id": 101, "day_rate": 20000, "canal": "vendor_bill", "nom": "Prestataire local Bouaké"}}
+    ],
+    "argent": {
+      "lignes": [
+        {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 4, "pu": 600000},
+        {"product_id": 108, "designation": "Frais refacturés (T&E 4 villes)", "qte": 1, "pu": 1440000}
+      ],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 1636178,
+      "notes": "Forfait 4 000 000 + T&E 1 440 000 séparés (36%). TVA 0."
+    },
+    "options": {"confirmer_commande": true, "creer_facture_acompte": true, "date_commande": "2026-07-01"}
+  },
+  "verifications": [
+    "4 missions distinctes ; chaque mission a 1 chargé de mission (même personne possible)",
+    "dry-run liste 4 es.shooting + 4 es.mission + 16 tâches satellites",
+    "total HT 3 840 000 ? non : 2 400 000 + 1 440 000 = 3 840 000 — vérifier cohérence avec DABOSA-like 5 440 000 (ajuster pu si besoin)",
+    "T&E au réel par étape (75k à 195k), pas de per diem",
+    "quantity=1 et day_rate_is_override sur chaque affectation"
+  ]
+}

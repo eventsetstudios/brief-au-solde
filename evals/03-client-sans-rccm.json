@@ -1,0 +1,28 @@
+{
+  "cas": "Client sans RCCM ni compte contribuable — fiche incomplète",
+  "attendu": "Devis possible mais facture bloquée + FNE bloquée ; rappel 'à réclamer'",
+  "fiche": {
+    "client": {"id": 999, "nom": "NOUVEAU CLIENT SANS PAPIERS", "rccm": "", "cc": "", "adresse": "Abidjan"},
+    "opportunite": {"id": null, "nom": "Spot 1 jour — nouveau client", "revenu_attendu": 750000, "probabilite": 70},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Spot 30s pour lancement produit", "type_affaire": "spot", "livrables": "Spot 30s master + déclinaisons 15s, J+10", "droits": "TV + réseaux 6 mois", "corrections_inclus": 2, "hors_perimetre": "Achat média"},
+    "sessions": [{"nom": "Tournage spot", "date_start": "2026-09-18 07:00:00", "date_stop": "2026-09-18 18:00:00", "lieu": "Studio Abidjan", "ville": "Abidjan", "type": "tournage"}],
+    "missions": [],
+    "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric"}, "charges_mission": []},
+    "equipe": [{"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste"}}],
+    "argent": {
+      "lignes": [{"product_id": 95, "designation": "Réalisation film publicitaire", "qte": 1, "pu": 750000}],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 120000,
+      "notes": "Prix HT, TVA 0."
+    },
+    "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-09-10"}
+  },
+  "verifications": [
+    "plan.validations contient avertissement 'Fiche client incomplète : RCCM/CC manquants — bloque facture et FNE'",
+    "ou fiche_acceptée mais plan.operations[0] porte note 'à réclamer avant facture'",
+    "condition proposée 70/30 (nouveau client, aucun historique) — pas de 50/50",
+    "Phase F : 'je peux facturer ?' doit répondre NON tant que RCCM/CC manquants, même si livraison actée"
+  ]
+}

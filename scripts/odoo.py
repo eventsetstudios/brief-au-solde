@@ -6,6 +6,11 @@ les libellés en anglais et le diagnostic est faux.
 
 Identifiants : variables d'environnement ODOO_URL / ODOO_DB / ODOO_USER /
 ODOO_PASSWORD, ou fichier ~/.odoo_es.json portant les mêmes clés en minuscules.
+Par défaut ODOO_URL = https://manage.eventsetstudios.ci (public, depuis 21/09/2026) ;
+secours : http://100.119.180.128:8069 (Tailscale) et eventsetstudios.local (LAN).
+Si le connecteur MCP Odoo est présent dans la session, il est utilisé en priorité.
+En bac à sable filtré, un refus x-deny-reason sur manage.eventsetstudios.ci bascule
+automatiquement sur le MCP.
 
 Usage :
     python3 odoo.py ping
@@ -25,7 +30,7 @@ import xmlrpc.client
 from pathlib import Path
 
 CTX = {"lang": "fr_FR"}
-DEFAULTS = {"url": "http://100.119.180.128:8069", "db": "odoo_db"}
+DEFAULTS = {"url": "https://manage.eventsetstudios.ci", "db": "odoo_db"}
 
 
 class OdooError(RuntimeError):
@@ -64,11 +69,13 @@ class Odoo:
                 f"{self.url}/xmlrpc/2/common", transport=transport, allow_none=True)
             self.version = common.version().get("server_serie", "?")
             self.uid = common.authenticate(self.db, self.user, self.password, {})
-        except Exception as exc:  # réseau, DNS, hôte hors allowlist
+        except Exception as exc:  # réseau, DNS, hôte hors allowlist, x-deny-reason
+            hint = "manage.eventsetstudios.ci hors allowlist (x-deny-reason) ? Bascule sur le connecteur MCP Odoo" \
+                if "x-deny" in str(exc).lower() or "deny" in str(exc).lower() else \
+                "Adresse principale https://manage.eventsetstudios.ci ; secours Tailscale 100.119.180.128:8069"
             raise OdooError(
                 f"Connexion impossible à {self.url} ({exc.__class__.__name__}: {exc}). "
-                "Le serveur n'est joignable que depuis la machine de Lycris ou son réseau "
-                "Tailscale. N'invente aucun chiffre : bascule sur references/referentiel.md "
+                f"{hint}. N'invente aucun chiffre : bascule sur references/referentiel.md "
                 "et dis-le explicitement."
             ) from exc
         if not self.uid:

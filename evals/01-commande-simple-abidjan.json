@@ -1,0 +1,32 @@
+{
+  "cas": "Commande simple — 1 jour à Abidjan, sans T&E, sans apporteur, 70/30",
+  "attendu": "1 session, 0 mission, 1 chargé de projet, facture d'acompte brouillon 70%, TVA 0, marge ~65%",
+  "fiche": {
+    "client": {"id": 832, "nom": "EXP-MOMENTUM COTE D'IVOIRE", "rccm": "CI-ABJ-2020-B-12345", "cc": "1234567A", "adresse": "Abidjan Cocody"},
+    "opportunite": {"id": null, "nom": "Captation séminaire — 1 jour — Abidjan", "revenu_attendu": 600000, "probabilite": 90, "date_cloture": "2026-10-15"},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Couverture vidéo séminaire 1 jour pour diffusion interne", "type_affaire": "captation", "livrables": "Highlight 3 min + 50 photos, J+3", "droits": "Interne 12 mois", "corrections_inclus": 2, "hors_perimetre": "Motion design"},
+    "sessions": [{"nom": "J1 Séminaire", "date_start": "2026-10-20 08:00:00", "date_stop": "2026-10-20 18:00:00", "lieu": "Hôtel Ivoire", "ville": "Abidjan", "type": "tournage"}],
+    "missions": [],
+    "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric N'guessan"}, "charges_mission": []},
+    "equipe": [
+      {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste Ahibo"}},
+      {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 2, "day_rate": 20000, "canal": "timesheet", "nom": "Jordan Anoh"}}
+    ],
+    "argent": {
+      "lignes": [{"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 1, "pu": 600000}],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 45000,
+      "notes": "TVA 0 (octobre 2026). 2 tours inclus."
+    },
+    "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-10-20", "validite_jours": 30}
+  },
+  "verifications": [
+    "plan.resume.missions == 0",
+    "plan.resume.total_vendu_ht == 600000",
+    "plan.operations contient sale.order en draft + account.move draft 70% = 420000",
+    "plan.validations == [] (fiche validable)",
+    "dry-run n'écrit rien ; --executer crée crm.lead + sale.order et s'arrête sans project_id si confirmer_commande false"
+  ]
+}

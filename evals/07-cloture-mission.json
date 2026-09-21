@@ -1,0 +1,30 @@
+{
+  "cas": "Clôture de mission / session — séquence 6-10",
+  "attendu": "Présences, dépenses au réel, cachets, CR, avancement tâches (J+1/J+2)",
+  "routine": "clôture la mission Grand-Bassam / clôture la session J1",
+  "entree": "es.shooting id 42 ou es.mission 'Mission Grand-Bassam' (projet 448)",
+  "lectures": [
+    "es.shooting / es.mission : dates, équipe, logistique prévisionnelle vs réel",
+    "es.crew.assignment : attendance_state, day_rate, quantity",
+    "account.move / hr.expense : dépenses au réel (caisse CSH1 TTC sans TVA)",
+    "project.task : satellites J+1/J+2"
+  ],
+  "produit_attendu": {
+    "presences": "3/4 confirmés, 1 en attente",
+    "depenses_reelles": "Transport 45 000 (prévu 40 000), hébergement 65 000 (prévu 60 000), restauration 28 000 — écart +8 000",
+    "cachets": "Doulaye 50 000 ×1 en vendor_bill avec analytique 457 ; Modeste 25 000 en timesheet",
+    "taches": "J+1 dérushage créé/close, J+2 intégration à faire"
+  },
+  "propose_d_ecrire": [
+    "es.crew.assignment.attendance_state = confirmed/declined",
+    "hr.expense / account.move (CSH1) avec analytic_distribution du projet, comptes 618200/618400/618100, SANS TVA récupérable",
+    "es.crew.assignment.expense_id (si externe en avance) ou account.move fournisseur",
+    "es.shooting.state = done",
+    "project.task J+1 / J+2 : avancement / closure"
+  ],
+  "garde_fous": [
+    "Ne jamais laisser 227 500 F en espèces hors affectation comme sur DABOSA",
+    "quantity=1, day_rate_is_override=true",
+    "Analytique projet obligatoire (67% non rattachées)"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "cas": "Condition sans acompte (30 jours / paiement à réception) — ouverture sans encaissement",
+  "attendu": "Projet ouvert sur accord écrit seul ; signaler risque trésorerie ; pas de facture d'acompte",
+  "fiche": {
+    "client": {"id": 832, "nom": "PUBLICIS WEST AFRICA", "rccm": "CI-ABJ-2019-B-00001", "cc": "0000001A"},
+    "opportunite": {"id": 10, "nom": "Campagne interne — 30 jours", "revenu_attendu": 800000, "probabilite": 95},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Reportage interne 1 jour", "type_affaire": "reportage", "livrables": "50 photos + article, J+3", "droits": "Interne", "corrections_inclus": 2, "hors_perimetre": ""},
+    "sessions": [{"nom": "Tournage Abidjan", "date_start": "2026-09-18 08:00:00", "date_stop": "2026-09-18 18:00:00", "lieu": "Siège client", "ville": "Abidjan", "type": "tournage"}],
+    "missions": [],
+    "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric"}, "charges_mission": []},
+    "equipe": [{"role": "photographe", "role_id": 2, "titulaire": {"employee_id": 3, "day_rate": 20000, "canal": "timesheet", "nom": "Bogui"}}],
+    "argent": {
+      "lignes": [{"product_id": 100, "designation": "Reportage photo", "qte": 1, "pu": 350000}],
+      "condition_paiement_id": 4,
+      "taux_tva": 0,
+      "cout_revient": 40000,
+      "notes": "Condition 30 jours — sans acompte"
+    },
+    "options": {"confirmer_commande": true, "creer_facture_acompte": false, "date_commande": "2026-09-10"}
+  },
+  "verifications": [
+    "plan.resume.declencheur_ouverture == 'accord écrit seul (sans acompte) — signaler que les dates sont bloquées sans avance'",
+    "plan.operations facture d'acompte == 'aucune — condition sans acompte'",
+    "Ne pas bloquer l'ouverture en attendant un encaissement",
+    "Phase E : alerte trésorerie — studio avance tout"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "cas": "Apporteur d'affaires avec commission — impact marge",
+  "attendu": "Marge affichée avec et sans commission ; prix augmenté du montant de la commission",
+  "fiche": {
+    "client": {"id": 832, "nom": "EXP-MOMENTUM", "rccm": "CI-ABJ-2020-B-12345", "cc": "1234567A"},
+    "opportunite": {"id": null, "nom": "Festival Grand-Bassam-like — 2 jours", "revenu_attendu": 1200000, "probabilite": 90},
+    "apporteur": {"nom": "Rufin Akadje", "commission": 200000},
+    "cadrage": {"intention": "Festival 2 jours, comme Grand-Bassam", "type_affaire": "captation", "livrables": "200 photos/j + highlight 3 min, J+5", "droits": "Réseaux 12 mois", "corrections_inclus": 2, "hors_perimetre": "Scénographie"},
+    "sessions": [
+      {"nom": "J1", "date_start": "2026-11-14 08:00:00", "date_stop": "2026-11-14 18:00:00", "lieu": "Grand-Bassam", "ville": "Grand-Bassam", "type": "tournage"},
+      {"nom": "J2", "date_start": "2026-11-15 08:00:00", "date_stop": "2026-11-15 18:00:00", "lieu": "Grand-Bassam", "ville": "Grand-Bassam", "type": "tournage"}
+    ],
+    "missions": [{"nom": "Mission Grand-Bassam", "ville": "Grand-Bassam", "date_depart": "2026-11-13", "date_retour": "2026-11-16", "logistique": {"transport": 40000, "hebergement": 60000, "restauration": 30000, "fret": 10000}}],
+    "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric"}, "charges_mission": [{"mission": "Mission Grand-Bassam", "user_id": 5, "nom": "Frédéric"}]},
+    "equipe": [
+      {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste"}},
+      {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 2, "day_rate": 20000, "canal": "timesheet", "nom": "Jordan"}},
+      {"role": "drone", "role_id": 3, "titulaire": {"partner_id": 42, "day_rate": 50000, "canal": "vendor_bill", "nom": "Doulaye"}}
+    ],
+    "argent": {
+      "lignes": [
+        {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 600000},
+        {"product_id": 108, "designation": "Frais refacturés (T&E + commission)", "qte": 1, "pu": 340000}
+      ],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 632308,
+      "notes": "Dont 200 000 commission apporteur Rufin Akadje."
+    },
+    "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-11-14"}
+  },
+  "verifications": [
+    "cout_revient contient 200 000 commission — marge 47% avec, 64% sans : les deux affichées",
+    "Si marge <60% (47%), plan signale explicitement et propose : monter le prix de 200k ou réduire T&E/jours",
+    "Compte 632200 (commissions) proposé pour la facture apporteur",
+    "Question apporteur posée en série 1 et jamais sautée"
+  ]
+}
