@@ -14,7 +14,7 @@
       {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 2, "day_rate": 20000, "canal": "timesheet", "nom": "Jordan Anoh"}}
     ],
     "argent": {
-      "lignes": [{"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 1, "pu": 600000}],
+      "lignes": [{"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 1, "pu": 650000}],
       "condition_paiement_id": 27,
       "taux_tva": 0,
       "cout_revient": 45000,
@@ -24,8 +24,8 @@
   },
   "verifications": [
     "plan.resume.missions == 0",
-    "plan.resume.total_vendu_ht == 600000",
-    "plan.operations contient sale.order en draft + account.move draft 70% = 420000",
+    "plan.resume.total_vendu_ht == 650000",
+    "plan.operations contient sale.order en draft + account.move draft 70% = 455000",
     "plan.validations == [] (fiche validable)",
     "dry-run n'écrit rien ; --executer crée crm.lead + sale.order et s'arrête sans project_id si confirmer_commande false"
   ]

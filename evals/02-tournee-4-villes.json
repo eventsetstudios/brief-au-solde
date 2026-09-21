@@ -33,8 +33,8 @@
     ],
     "argent": {
       "lignes": [
-        {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 4, "pu": 600000},
-        {"product_id": 108, "designation": "Frais refacturés (T&E 4 villes)", "qte": 1, "pu": 1440000}
+        {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 4, "pu": 650000},
+        {"product_id": 119, "designation": "Frais refacturés (T&E 4 villes)", "qte": 1, "pu": 1440000}
       ],
       "condition_paiement_id": 27,
       "taux_tva": 0,
@@ -46,7 +46,7 @@
   "verifications": [
     "4 missions distinctes ; chaque mission a 1 chargé de mission (même personne possible)",
     "dry-run liste 4 es.shooting + 4 es.mission + 16 tâches satellites",
-    "total HT 3 840 000 ? non : 2 400 000 + 1 440 000 = 3 840 000 — vérifier cohérence avec DABOSA-like 5 440 000 (ajuster pu si besoin)",
+    "total HT 4 040 000 = 2 600 000 (4j x 650 000, produit 107) + 1 440 000 T&E — marge ~59,5 %, avertissement <60 % attendu",
     "T&E au réel par étape (75k à 195k), pas de per diem",
     "quantity=1 et day_rate_is_override sur chaque affectation"
   ]

@@ -11,7 +11,7 @@
     "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric"}, "charges_mission": []},
     "equipe": [{"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste"}}],
     "argent": {
-      "lignes": [{"product_id": 95, "designation": "Réalisation film publicitaire", "qte": 1, "pu": 750000}],
+      "lignes": [{"product_id": 106, "designation": "Réalisation film publicitaire", "qte": 1, "pu": 750000}],
       "condition_paiement_id": 27,
       "taux_tva": 0,
       "cout_revient": 120000,

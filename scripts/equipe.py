@@ -10,7 +10,7 @@ Le conflit avertit, il ne bloque pas : c'est Lycris qui arbitre.
 
 Usage :
     python3 equipe.py --du 2026-10-12 --au 2026-10-13
-    python3 equipe.py --du 2026-10-12 --au 2026-10-13 --produits 96,101
+    python3 equipe.py --du 2026-10-12 --au 2026-10-13 --produits 107,112
     python3 equipe.py --du 2026-10-12 --au 2026-10-13 --jours 2
 """
 from __future__ import annotations

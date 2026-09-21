@@ -40,8 +40,8 @@ Fiche JSON minimale attendue (tous les champs illustrés dans --exemple) :
   ],
   "argent": {
     "lignes": [
-      {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 600000},
-      {"product_id": 108, "designation": "Frais refacturés (T&E)", "qte": 1, "pu": 140000}
+      {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 650000},
+      {"product_id": 119, "designation": "Frais refacturés (T&E)", "qte": 1, "pu": 140000}
     ],
     "condition_paiement_id": 27,
     "taux_tva": 0,
@@ -95,9 +95,9 @@ EXEMPLE = {
     ],
     "argent": {
         "lignes": [
-            {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 600000},
-            {"product_id": 101, "designation": "Captation drone", "qte": 2, "pu": 760000},
-            {"product_id": 108, "designation": "Frais refacturés (T&E)", "qte": 1, "pu": 140000},
+            {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 650000},
+            {"product_id": 112, "designation": "Captation drone", "qte": 2, "pu": 760000},
+            {"product_id": 119, "designation": "Frais refacturés (T&E)", "qte": 1, "pu": 140000},
         ],
         "condition_paiement_id": 27,
         "taux_tva": 0,
@@ -152,7 +152,7 @@ def _validate_fiche(d: dict) -> tuple[list[str], list[str]]:
     for l in argent.get("lignes") or []:
         if not l.get("product_id"):
             errs.append(f"ligne sans product_id: {l.get('designation')}")
-        if l.get("product_id") in (103, 104, 107) and l.get("pu", 0) <= 1:
+        if l.get("product_id") in (114, 115, 118) and l.get("pu", 0) <= 1:
             errs.append(f"produit {l['product_id']} à 1 F — prix à fixer avec Lycris, ne pas laisser 1 F")
     # TVA
     date_cmd = (d.get("options") or {}).get("date_commande") or ""

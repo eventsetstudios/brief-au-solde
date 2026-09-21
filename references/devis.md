@@ -9,7 +9,7 @@ si ce point de départ tient face à la réalité du terrain.
 ## 1. Trouver les affaires comparables
 
 ```bash
-python3 scripts/analogues.py --client 832 --produits 96,101 --jours 2
+python3 scripts/analogues.py --client 832 --produits 107,112 --jours 2
 ```
 
 Trois axes de rapprochement, du plus fort au plus faible :
@@ -127,11 +127,11 @@ Présenté dans la conversation, avant toute mise en forme. Il tient en un écra
 CAPTATION FESTIVAL X — EXP-MOMENTUM — 2 jours, Abidjan
 
 Ligne                                    Qté   PU        Total
-Captation / couverture d'événement (96)    2   600 000  1 200 000
-Captation drone (101)                      2   760 000  1 520 000
-Frais refacturés (108)                     1    60 000     60 000
+Captation / couverture d'événement (107)   2   650 000  1 300 000
+Captation drone (112)                      2   760 000  1 520 000
+Frais refacturés (119)                     1    60 000     60 000
                                                        ─────────
-                                          Total vendu  2 780 000
+                                          Total vendu  2 880 000
 
 Coût de revient prévisionnel                              352 840
   équipe 3 pers. × 2 j                        103 840
@@ -139,7 +139,7 @@ Coût de revient prévisionnel                              352 840
   régie (transport, repas, consommables)       60 000
   post-production 3 j                          94 000
 
-Marge                              2 427 160 F — 87,3 %
+Marge                              2 527 160 F — 87,8 %
 Condition proposée      70 % d'acompte, solde à 30 jours (client connu, paie à 20 j)
 
 Appui : Festival des Grillades (800 000 F, 2 j, marge 67,1 %) — même client, même format,

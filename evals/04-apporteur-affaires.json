@@ -19,8 +19,8 @@
     ],
     "argent": {
       "lignes": [
-        {"product_id": 96, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 600000},
-        {"product_id": 108, "designation": "Frais refacturés (T&E + commission)", "qte": 1, "pu": 340000}
+        {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 650000},
+        {"product_id": 119, "designation": "Frais refacturés (T&E + commission)", "qte": 1, "pu": 340000}
       ],
       "condition_paiement_id": 27,
       "taux_tva": 0,
@@ -30,8 +30,8 @@
     "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-11-14"}
   },
   "verifications": [
-    "cout_revient contient 200 000 commission — marge 47% avec, 64% sans : les deux affichées",
-    "Si marge <60% (47%), plan signale explicitement et propose : monter le prix de 200k ou réduire T&E/jours",
+    "cout_revient contient 200 000 commission — marge ~61,4 % avec (1 640 000 vendus), ~73,6 % sans : les deux affichées",
+    "marge 60-65 % → mention en une ligne ; si <60 % le plan signale explicitement et propose : monter le prix de 200k ou réduire T&E/jours",
     "Compte 632200 (commissions) proposé pour la facture apporteur",
     "Question apporteur posée en série 1 et jamais sautée"
   ]

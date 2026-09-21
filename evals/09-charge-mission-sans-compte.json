@@ -15,8 +15,8 @@
     "equipe": [{"role": "photographe local", "role_id": 2, "titulaire": {"partner_id": 9999, "day_rate": 20000, "canal": "vendor_bill", "nom": "Prestataire Local Bouaké"}}],
     "argent": {
       "lignes": [
-        {"product_id": 96, "designation": "Captation", "qte": 1, "pu": 600000},
-        {"product_id": 108, "designation": "Frais T&E", "qte": 1, "pu": 170000}
+        {"product_id": 107, "designation": "Captation", "qte": 1, "pu": 650000},
+        {"product_id": 119, "designation": "Frais T&E", "qte": 1, "pu": 170000}
       ],
       "condition_paiement_id": 27,
       "taux_tva": 0,

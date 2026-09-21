@@ -7,8 +7,8 @@ la marge constatée. C'est la matière première du chiffrage par analogie.
 
 Usage :
     python3 analogues.py --client 832
-    python3 analogues.py --produits 96,101 --jours 2
-    python3 analogues.py --client 832 --produits 96 --limit 6
+    python3 analogues.py --produits 107,112 --jours 2
+    python3 analogues.py --client 832 --produits 107 --limit 6
 """
 from __future__ import annotations
 

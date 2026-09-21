@@ -19,9 +19,9 @@ Scénario le plus simple. 1 session, 0 mission.
 - **Tâches** : Pré-prod (repérage, convocation) → Production (J captation) → Post-prod
   (montage 2-3 j) → Validation client → Livré + 4 satellites (J−2, J, J+1, J+2).
 - **Lignes** :
-  - 96 Captation / couverture d'événement × 1 j (600 000)
-  - 101 Captation drone × 1 j si drone (760 000)
-  - 108 Frais refacturés : régie ~30 000 (transport 10 000 + restauration 10 000 + consommables)
+  - 107 Captation / couverture d'événement × 1 j (650 000)
+  - 112 Captation drone × 1 j si drone (760 000)
+  - 119 Frais refacturés : régie ~30 000 (transport 10 000 + restauration 10 000 + consommables)
 - **T&E** : sur une seule ligne 108 « au réel » — pas de mission.
 - **Marge attendue** : ~65-70 % sans apporteur (Abidjan, régie légère).
 
@@ -39,9 +39,9 @@ Référence : Festival des Grillades d'Abidjan (projet 290) — 800 000 vendu, 2
 - **Régie** : ~60 000 pour 2 jours (transport équipe 20 000 + matériel 7 000 + restauration
   20 000 + consommables 7 000 + transport Joël 10 000).
 - **Lignes** (exemple Grand-Bassam) en **deux lignes distinctes** :
-  - 96 Captation × 2 j (400 000/j = 800 000) — ou forfait unique selon client
-  - 108 Frais régie × 2 j (200 000/j = 400 000) — ou 60 000 forfait si Abidjan
-  - 101 Drone × 2 j si vendu à part (760 000/j)
+  - 107 Captation × 2 j (400 000/j = 800 000) — ou forfait unique selon client
+  - 119 Frais régie × 2 j (200 000/j = 400 000) — ou 60 000 forfait si Abidjan
+  - 112 Drone × 2 j si vendu à part (760 000/j)
 - **Tâches** : identiques + planning 2 sessions (ou 1 session de 2 jours selon découpage).
 - **Vigile** : apporteur ? Grand-Bassam est passé de 64 % à 47 % pour 200 000 F de commission.
 
@@ -58,7 +58,7 @@ Référence : Grand-Bassam (projet 448) — 1 200 000 vendu (800 000 captation +
 - **T&E** : 40 000 à 60 000/j hors Abidjan proche (transport 20 000/j + nourriture 15 000/j +
   hébergement si nuitée + commission apporteur éventuelle).
 - **Lignes** :
-  - Forfait captation (96/98) + ligne régie/T&E séparée (108) — ne pas absorber.
+  - Forfait captation (107/109) + ligne régie/T&E séparée (119) — ne pas absorber.
 - **Leçon** : Grand-Bassam payé en espèces le 10/08, FNE toujours en attente → vérifier FNE à la
   clôture.
 
@@ -78,8 +78,8 @@ charges, 69,9 %. 8 étapes, 4 villes (Dabou, Bouaké, Abengourou, San Pédro), 4
 - **T&E par étape** : 75 000 (Dabou) à 195 000 (Bouaké/Abengourou) — 1 440 000 au total
   (36 % du forfait captation). À chiffrer au réel d'une étape comparable, pas au per diem.
 - **Lignes** :
-  - Forfait captation (96/98/100/101 selon prestation) — ex. 500 000/étape
-  - Frais refacturés / T&E — 1 ligne **séparée** (108, 180 000/étape en moyenne)
+  - Forfait captation (107/109/111/112 selon prestation) — ex. 500 000/étape
+  - Frais refacturés / T&E — 1 ligne **séparée** (119, 180 000/étape en moyenne)
 - **Tâches** : 1 projet + 8 sessions + 4 × 8 tâches satellites. Modèle de production
   « Tournée » à appliquer (Pré-prod → Prod ×8 → Post-prod → Validation → Livré).
 - **Sessions** : `es.shooting` par étape (date_start/stop, lieu, manager, équipe, matériel).
@@ -98,11 +98,11 @@ Référence : à constituer (MAGGI — commande test, projet fantôme à vérifi
   (montage, étalonnage, mixage — souvent sous-estimé : 3-5 j) → Validation client (2 tours)
   → Livré.
 - **Lignes** :
-  - 95 Réalisation film publicitaire (750 000)
-  - 98 Montage / post-production (700 000)
-  - 99 Motion design si habillage (500 000)
-  - 106/103 Location si besoin
-  - 108 Frais refacturés (transport, régie)
+  - 106 Réalisation film publicitaire (750 000)
+  - 109 Montage / post-production (700 000)
+  - 110 Motion design si habillage (500 000)
+  - 117/114 Location si besoin
+  - 119 Frais refacturés (transport, régie)
 - **Vigile** : tours de correction inclus à fixer au devis (référence pour avenant).
 
 ---

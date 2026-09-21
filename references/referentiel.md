@@ -37,40 +37,50 @@ toute facture ou tout devis daté du 01/10/2026 ou après sort **sans taxe** (vo
 `references/comptabilite.md`). Le taux historique de 18 % ne s'applique plus qu'aux pièces
 antérieures. Ne pas reconduire la TVA par habitude.
 
-| ID | Produit | Unité | Prix XOF (référence) | Catégorie |
-|---|---|---|---|---|
-| 95 | Réalisation film publicitaire | Unité | 750 000 | Production audiovisuelle |
-| 96 | Captation / couverture d'événement | Jour | 600 000 | Production audiovisuelle |
-| 97 | Publi-reportage | Unité | 250 000 | Production audiovisuelle |
-| 98 | Montage / post-production | Unité | 700 000 | Production audiovisuelle |
-| 99 | Motion design & animation | Unité | 500 000 | Production audiovisuelle |
-| 100 | Reportage photo | Jour | 350 000 | Production audiovisuelle |
-| 101 | Captation drone | Jour | 760 000 | Production audiovisuelle |
-| 102 | Régie technique événement | Jour | 350 000 | Événementiel |
-| 103 | Sonorisation, éclairage & écran LED | Jour | **à fixer** | Événementiel |
-| 104 | Technicien / cadreur additionnel | Jour | **à fixer** | Événementiel |
-| 105 | Campagne digitale & community management | Unité | 3 000 000 | Digital & contenus |
-| 106 | Location caméra, optique & lumière | Jour | 100 000 | Location matériel & studio |
-| 107 | Location studio | Jour | **à fixer** | Location matériel & studio |
-| 108 | Frais refacturés (transport, régie, divers) | Unité | **au réel** | Frais refacturés |
+| ID réel | Anc. ID | Produit | Unité | Prix XOF (référence) | Taxe en base au 21/09/2026 |
+|---|---|---|---|---|---|
+| 106 | 95 | Réalisation film publicitaire | Unité | 750 000 | 18 % (à retirer ligne à ligne) |
+| 107 | 96 | Captation / couverture d'événement | Jour | 650 000 (était 600 000) | aucune — déjà TVA 0 |
+| 108 | 97 | Publi-reportage | Unité | 250 000 | 18 % (à retirer ligne à ligne) |
+| 109 | 98 | Montage / post-production | Unité | 700 000 | 18 % (à retirer ligne à ligne) |
+| 110 | 99 | Motion design & animation | Unité | 500 000 | 18 % (à retirer ligne à ligne) |
+| 111 | 100 | Reportage photo | Jour | 350 000 | 18 % (à retirer ligne à ligne) |
+| 112 | 101 | Captation drone | Jour | 760 000 | 18 % (à retirer ligne à ligne) |
+| 113 | 102 | Régie technique événement | Jour | 350 000 | 18 % (à retirer ligne à ligne) |
+| 114 | 103 | Sonorisation, éclairage & écran LED | Jour | **à fixer** (1 F) | 18 % (à retirer ligne à ligne) |
+| 115 | 104 | Technicien / cadreur additionnel | Jour | **à fixer** (1 F) | 18 % (à retirer ligne à ligne) |
+| 116 | 105 | Campagne digitale & community management | Unité | 3 000 000 | 18 % (à retirer ligne à ligne) |
+| 117 | 106 | Location caméra, optique & lumière | Jour | 100 000 | 18 % (à retirer ligne à ligne) |
+| 118 | 107 | Location studio | Jour | **à fixer** (1 F) | 18 % (à retirer ligne à ligne) |
+| 119 | 108 | Frais refacturés (transport, régie, divers) | Unité | **au réel** (1 F) | 18 % (à retirer ligne à ligne) |
 
-Les prix proviennent de la médiane des 600 dernières lignes de commande confirmées (relevé
-07/09/2026). Ils sont hors TVA depuis octobre 2026.
+⚠ **IDs relevés le 21/09/2026 directement en base** (test Blacknideas, `product.product`
+`sale_ok + service`) : le catalogue vit sous les IDs **106 à 119**. Les anciens IDs 95-108
+du relevé 07/09/2026 sont obsolètes — les lignes existent toujours mais portent d'autres
+produits (ex. 100 = « Appearance + Digital Campaign… », 101 = « Event Registration »,
+104 = « Prestation »). Les prix proviennent de la médiane des 600 dernières lignes de
+commande confirmées ; seule la captation a bougé (600 000 → 650 000). Ils sont hors TVA
+depuis octobre 2026. **La base fait foi** : revérifie les IDs avant chaque chiffrage.
 
-**Les quatre prix « à fixer »** (103, 104, 107, 108) sont à 1 XOF en base faute d'historique
+**Les trois prix « à fixer »** (114, 115, 118) sont à 1 XOF en base faute d'historique
 exploitable. Si une affaire en a besoin, demande le prix à Lycris — ne prends pas 1 F, et ne
 devine pas.
 
-**Règle de présentation** : forfait et T&E (produit 108 ou 108 ventilé) sur **deux lignes
+Le 119 se facture sur quantité livrée manuelle : on refacture ce qui a réellement été engagé.
+Les autres sont en prépayé / prix fixe.
+
+**Règle de présentation** : forfait et T&E (produit 119 ou 119 ventilé) sur **deux lignes
 distinctes** du devis/facture (compte 706100, voir `references/comptabilite.md`). Ne jamais
 absorber la logistique dans le forfait.
 
 Tous les produits de production sont en `task_in_project` : **une commande confirmée donne un
 projet et une tâche par ligne**. Ne crée pas le projet à la main.
 
-**Réglage TVA à proposer (sans appliquer seul)** : retirer la taxe 18 % par défaut sur les
-14 produits du catalogue, sur les modèles de devis et sur la position fiscale par défaut des
-clients. Le skill signale le chantier, il ne l'exécute pas.
+**Taxe** : seul le 107 est déjà sans taxe ; les 13 autres portent encore la taxe 18 %
+(id 14) par défaut. Le devis vide donc `tax_ids` ligne à ligne (`scripts/commande.py` le
+fait, et le test Blacknideas PR2609-0147 l'a vérifié : 3 lignes `tax_id []`). Chantier de
+retrait définitif à proposer (sans appliquer seul) : taxe par défaut des 14 produits, modèles
+de devis, position fiscale par défaut des clients.
 
 ---
 
@@ -104,6 +114,13 @@ entamée due en totalité, décompte arrêté en fin de mois civil, paiement au 
 mois suivant sur facture. Les valeurs ci-dessus sont celles effectivement portées en base ;
 quand elles divergent du contrat-cadre, la base fait foi pour le calcul et l'écart mérite
 d'être signalé à Lycris.
+
+> Relevé base du 21/09/2026 (`hr.employee`, test Blacknideas) : `hourly_cost` = **0** pour
+> Modeste Ahibo, Jordan Anoh, Bogui Jaures, Ayéhou Joël, Ariel Topka et Kimberly Kayinda —
+> **montage B** (`vendor_bill`), pas des données manquantes. Seuls Frédéric N'guessan
+> (6 920) et Joël-Christian Lopy (16 154) portent un coût `timesheet`. Les 20 000-25 000 F
+> ci-dessus restent les tarifs contractuels à retenir pour le coût de revient via facture
+> fournisseur ; la fiche employé fait foi personne par personne.
 
 ### Canaux de coût
 

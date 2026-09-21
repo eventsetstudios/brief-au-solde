@@ -123,7 +123,7 @@ Sans Odoo (ou `x-deny-reason` sur le domaine en bac à sable filtré), le skill 
 python3 scripts/odoo.py ping                          # test connexion
 python3 scripts/odoo.py client 42                     # fiche client
 python3 scripts/odoo.py projet 123                    # état complet d'une affaire
-python3 scripts/analogues.py --client 832 --produits 96,101 --jours 2
+python3 scripts/analogues.py --client 832 --produits 107,112 --jours 2
 python3 scripts/equipe.py --du 2026-10-12 --au 2026-10-13 --roles cadreur,drone
 python3 scripts/proforma.py --data proforma.json      # XLSX + PDF
 python3 scripts/commande.py --exemple > fiche.json    # fiche modèle
@@ -148,14 +148,14 @@ Routines solopreneur (voir `references/routines.md`) :
 
 | ID | Produit | Prix XOF |
 |----|---------|----------|
-| 95 | Réalisation film publicitaire | 750 000 |
-| 96 | Captation / couverture d'événement | 600 000 / jour |
-| 100 | Reportage photo | 350 000 / jour |
-| 101 | Captation drone | 760 000 / jour |
-| 98 | Montage / post-production | 700 000 |
-| 108 | Frais refacturés | au réel |
+| 106 | Réalisation film publicitaire | 750 000 |
+| 107 | Captation / couverture d'événement | 650 000 / jour |
+| 111 | Reportage photo | 350 000 / jour |
+| 112 | Captation drone | 760 000 / jour |
+| 109 | Montage / post-production | 700 000 |
+| 119 | Frais refacturés | au réel |
 
-TVA 0 depuis 01/10/2026, 14 produits. Les produits 103,104,107,108 sont à 1 F en base (« à fixer ») — ne pas utiliser sans prix Lycris.
+TVA 0 depuis 01/10/2026, 14 produits (IDs 106-119 relevés en base le 21/09/2026). Les produits 114,115,118 sont à 1 F en base (« à fixer ») — ne pas utiliser sans prix Lycris. Seul le 107 est déjà sans taxe, les 13 autres portent encore la taxe 18 % à vider ligne à ligne.
 
 ## Garde-fous
 

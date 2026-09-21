@@ -11,7 +11,7 @@
     "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric"}, "charges_mission": []},
     "equipe": [{"role": "photographe", "role_id": 2, "titulaire": {"employee_id": 3, "day_rate": 20000, "canal": "timesheet", "nom": "Bogui"}}],
     "argent": {
-      "lignes": [{"product_id": 100, "designation": "Reportage photo", "qte": 1, "pu": 350000}],
+      "lignes": [{"product_id": 111, "designation": "Reportage photo", "qte": 1, "pu": 350000}],
       "condition_paiement_id": 4,
       "taux_tva": 0,
       "cout_revient": 40000,
