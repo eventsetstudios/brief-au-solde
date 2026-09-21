@@ -76,17 +76,36 @@ es_cost_channel = "vendor_bill"  # facture fournisseur → account.analytic.line
 - Convention : **1 journée de tournage = 1 jour de feuille de temps** (forfaitaire), base passée
   en jours le 07/09/2026, champ `hourly_cost` = « Coût par journée ».
 
-## Parc matériel
+## Parc matériel (relevé base 21/09/2026 — 100+ exemplaires, 11 kits)
 
-- `es.equipment` : matériel identifié (caméra, optique, lumière, son, drone, régie, studio,
-  véhicule) — `ownership` owned / subrented, `day_price` / `day_cost`, état calculé.
-- `es.equipment.kit` : lots prédéfinis (« Pack 2 caméras ») → réservation en un clic.
-- `es.equipment.booking` : `equipment_id` + `project_id` + `shooting_id` + `date_from/to`,
-  états `option → confirmed → out → returned`. **Chevauchement interdit** pour un même
-  matériel en `confirmed`/`out` — à vérifier quand on propose le dispositif.
+- `es.equipment` : `name`, `category_id` (Caméra, Boîtiers, Optique, Drone, Son,
+  Micros, Lumière, Régie, Studio, Stockage, Énergie…), `brand`/`model`,
+  `quantity` + `quantity_available` (calculé), `state` (`available`, `booked`,
+  `out`, `maintenance`, `broken`, `lost`, `retired`), `ownership`
+  (`owned`/`rented_in`/`customer`), `day_rate` **indicatif** — il n'entre jamais
+  dans le coût réel (amortissement) ; seule la facture fournisseur de
+  sous-location compte.
+- `es.equipment.kit` (+ `es.equipment.kit.line` : `equipment_id` + `quantity`) :
+  11 lots par usage — tournage Sony A7 III, Blackmagic 6K Pro, son reportage,
+  podcast 4 places, lumière studio photo, lumière LED, régie multicam, mouvement,
+  stabilisation, fond studio, drone Mavic 3. Un kit est un raccourci de saisie :
+  réserver un kit = 1 réservation par ligne de contenu.
+- `es.equipment.booking` : `equipment_id` (requis) + `project_id` + `shooting_id` /
+  `mission_id` + `quantity` (requis) + `date_from`/`date_to` (requis) + `holder_id`
+  (`res.users` — qui répond de l'unité) + `state`
+  (`draft`/`confirmed`/`out`/`returned`/`cancelled`) + `conflict_warning` (calculé).
+  `draft`, `confirmed` et `out` immobilisent le matériel et entrent dans le contrôle
+  de conflit.
+- Procédure questions → écriture : **(1)** lister via
+  `scripts/equipe.py --du … --au … --materiel [--categorie …]` (kits + exemplaires
+  avec état, disponibles et chevauchements) ; **(2)** faire valider kits,
+  exemplaires, quantités, fenêtre et porteur (chargé de mission par défaut) ;
+  **(3)** écrire `es.equipment.booking` en `draft` au temps 3, puis relire
+  `conflict_warning` et le signaler sans bloquer.
 - Vues : Planning matériel (calendar), « Vérifier la disponibilité », Bon de sortie/retour PDF.
-- Lot 1 : seul `equipment_note` (texte libre) sur `es.shooting` — le parc complet arrive au
-  lot 4, mais le skill vérifie déjà les conflits si le module est là.
+- Exemples d'état constatés : HF Sennheiser ew 112 P G4 ×2 `broken`, stabilisateurs
+  Feiyu AK2000/AK4000 `broken`, 2 objectifs Sony `broken` → à signaler dans le
+  questionnaire et à remplacer par de la location chiffrée.
 
 ## es.crew.ledger — ce qu'on doit à chaque intervenant
 
@@ -127,9 +146,13 @@ es_cost_channel = "vendor_bill"  # facture fournisseur → account.analytic.line
 ## Ce que le skill fait avec es_production
 
 - Lit `es.shooting` / `es.mission`, leurs créneaux, leur équipe et leur matériel.
-- Propose les affectations (titulaire + alternative) avec coût et canal.
+- Propose les affectations (membre nommé + rôle + remplaçant) avec coût et canal.
+- Propose le matériel (kits + exemplaires via `equipe.py --materiel`) avec état et
+  conflits, et fait valider porteur et fenêtre.
 - Crée `es.shooting` / `es.mission` + `es.crew.assignment` après validation temps 2, avec
   les garde-fous (conflits, `fields_get`, `day_rate_is_override`).
+- Crée `es.equipment.booking` en brouillon selon le matériel validé (1 par ligne +
+  lignes des kits), puis vérifie `conflict_warning`.
 - Génère les **4 tâches satellites par session** :
   - J−2 : préparation / convocation
   - J : captation

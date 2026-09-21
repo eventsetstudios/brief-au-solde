@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Propose une équipe pour une période donnée.
+"""Propose une équipe pour une période donnée, ou liste le matériel disponible.
 
 Croise quatre choses : la disponibilité sur la période (affectation qui chevauche,
 congé validé, indisponibilité déclarée), l'expérience du même type d'affaire lue
@@ -8,10 +8,16 @@ par journée.
 
 Le conflit avertit, il ne bloque pas : c'est Lycris qui arbitre.
 
+Avec --materiel : liste le parc es_production par catégorie (état, disponibles,
+hors service), les conflits de réservation sur la période et les kits
+prédéfinis — la matière du questionnaire « matériel à utiliser ».
+
 Usage :
     python3 equipe.py --du 2026-10-12 --au 2026-10-13
     python3 equipe.py --du 2026-10-12 --au 2026-10-13 --produits 107,112
     python3 equipe.py --du 2026-10-12 --au 2026-10-13 --jours 2
+    python3 equipe.py --du 2026-10-12 --au 2026-10-13 --materiel
+    python3 equipe.py --du 2026-10-12 --au 2026-10-13 --materiel --categorie Son
 """
 from __future__ import annotations
 
@@ -41,6 +47,91 @@ def projets_du_type(o: Odoo, produits: list[int]) -> list[int]:
     return [p["id"] for p in projets]
 
 
+def cmd_materiel(o: Odoo, du: str, au: str, categorie: str | None):
+    """Parc es_production : état, conflits de réservation sur la période, kits.
+
+    Sortie = la matière du questionnaire « matériel à utiliser » (série E2) :
+    ce qui est proposable, ce qui est en conflit (sans bloquer) et ce qui est
+    hors service. Le day_rate affiché est indicatif : il n'entre JAMAIS dans
+    le coût réel d'un tournage (amortissement), seule la facture fournisseur
+    de sous-location fait foi.
+    """
+    if not o.has_model("es.equipment"):
+        print(json.dumps({"ok": False,
+                          "erreur": "module es_production absent — repli : equipment_note "
+                                    "(texte libre) sur es.shooting"}, ensure_ascii=False, indent=2))
+        sys.exit(2)
+    dom = [["active", "=", True]]
+    if categorie:
+        cats = o.search_read("es.equipment.category", [["name", "ilike", categorie]], ["id"], limit=10)
+        if not cats:
+            print(json.dumps({"ok": False, "erreur": f"catégorie '{categorie}' introuvable"},
+                             ensure_ascii=False, indent=2))
+            sys.exit(2)
+        dom.append(["category_id", "in", [c["id"] for c in cats]])
+    equipements = o.search_read(
+        "es.equipment", dom,
+        ["name", "category_id", "brand", "model", "quantity", "quantity_available",
+         "state", "is_available", "day_rate", "ownership"], limit=500)
+
+    # Réservations qui chevauchent la période et immobilisent le matériel.
+    conflits: dict[int, list] = {}
+    for b in o.search_read(
+            "es.equipment.booking",
+            [["date_from", "<=", au + " 23:59:59"],
+             ["date_to", ">=", du + " 00:00:00"],
+             ["state", "in", ["draft", "confirmed", "out"]]],
+            ["equipment_id", "project_id", "shooting_id", "mission_id",
+             "quantity", "date_from", "date_to", "state", "holder_id"],
+            limit=500):
+        if b.get("equipment_id"):
+            conflits.setdefault(b["equipment_id"][0], []).append(b)
+
+    parc, indisponibles = [], []
+    for e in equipements:
+        fiche = {
+            "id": e["id"],
+            "nom": e["name"],
+            "categorie": (e.get("category_id") or [None, "?"])[1],
+            "marque_modele": " ".join(x for x in [e.get("brand"), e.get("model")] if x),
+            "exemplaires": e.get("quantity"),
+            "disponibles": e.get("quantity_available"),
+            "etat": e.get("state"),
+            "louable": e.get("ownership"),
+            "tarif_jour_indicatif": e.get("day_rate") or 0,
+            "reservations_chevauchantes": [
+                {"projet": (b.get("project_id") or [None, "?"])[1],
+                 "du": str(b.get("date_from"))[:16], "au": str(b.get("date_to"))[:16],
+                 "etat": b.get("state"),
+                 "porteur": (b.get("holder_id") or [None, "?"])[1]}
+                for b in conflits.get(e["id"], [])],
+        }
+        (indisponibles if not e.get("is_available") else parc).append(fiche)
+
+    kits = []
+    for k in o.search_read("es.equipment.kit", [["active", "=", True]],
+                           ["name", "note"], limit=50):
+        lignes = o.search_read("es.equipment.kit.line", [["kit_id", "=", k["id"]]],
+                               ["equipment_id", "quantity"], limit=50)
+        kits.append({
+            "id": k["id"], "nom": k["name"], "note": k.get("note"),
+            "contenu": [{"materiel": (l.get("equipment_id") or [None, "?"])[1],
+                         "equipment_id": (l.get("equipment_id") or [None])[0],
+                         "qte": l.get("quantity")} for l in lignes],
+        })
+
+    print(json.dumps({
+        "periode": {"du": du, "au": au},
+        "proposables": len(parc),
+        "hors_service": len(indisponibles),
+        "kits": kits,
+        "materiel": sorted(parc, key=lambda e: (e["categorie"], e["nom"])),
+        "indisponibles": sorted(indisponibles, key=lambda e: (e["categorie"], e["nom"])),
+        "regle_cout": "day_rate indicatif uniquement — jamais dans le coût réel ; "
+                      "seule la facture fournisseur de sous-location compte.",
+    }, ensure_ascii=False, indent=2, default=str))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -49,6 +140,9 @@ def main():
     ap.add_argument("--jours", type=float, default=None,
                     help="jours facturés par personne, pour le coût total")
     ap.add_argument("--produits", help="ids produits du catalogue, pour l'expérience du type")
+    ap.add_argument("--materiel", action="store_true",
+                    help="liste le parc es_production au lieu de proposer une équipe")
+    ap.add_argument("--categorie", help="filtre catégorie matériel (ex. Son, Drone, Lumière)")
     a = ap.parse_args()
 
     du, au = a.du, a.au
@@ -64,6 +158,10 @@ def main():
     except OdooError as exc:
         print(json.dumps({"ok": False, "erreur": str(exc)}, ensure_ascii=False, indent=2))
         sys.exit(2)
+
+    if a.materiel:
+        cmd_materiel(o, du, au, a.categorie)
+        return
 
     produits = [int(x) for x in a.produits.split(",")] if a.produits else []
     ref_projets = projets_du_type(o, produits)

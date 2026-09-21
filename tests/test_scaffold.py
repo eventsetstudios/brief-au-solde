@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from scaffold import (  # noqa: E402
+    DEFAULT_NAS_ROOT,
     TREE,
     init_projet,
     miroir_statut,
@@ -14,6 +15,10 @@ from scaffold import (  # noqa: E402
     trier,
     verifier_nom,
 )
+
+
+def test_racine_nas_par_defaut():
+    assert DEFAULT_NAS_ROOT == "/WORKS"
 
 
 def test_init_dry_run_ne_cree_rien(tmp_path):

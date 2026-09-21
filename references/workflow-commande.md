@@ -15,6 +15,10 @@ Avant toute question :
 - **Fiche client** : `res.partner` — RCCM, compte contribuable, factures ouvertes
   (`account.move` `amount_residual > 0`), délai de paiement constaté
   (`invoice_date` → date de paiement), condition de paiement par défaut, apporteur connu ?
+- **Référence dossier NAS** : lire les notes fiche client (`res.partner.comment`,
+  ligne `NAS: …` ou `Dossier NAS: …`). Si elle existe, s'en servir pour créer le reste
+  de l'arborescence (`/WORKS/<réf>/<année>/<Projet>/`) au temps 3. Si elle n'existe
+  pas, la demander à Lycris en série 1 (proposer le nom sanitisé du client).
 - **Affaires comparables** : `scripts/analogues.py --type <type> --client <id>` — même client,
   mêmes produits, même volume de jours. Sortir vendu, jours, équipe, marge.
 - **Disponibilités** : `scripts/equipe.py --du <date> --au <date> --roles …` — congés validés,
@@ -81,15 +85,37 @@ Formulation : **hypothèse pré-remplie à confirmer**, pas page blanche.
   accès selon la matrice des droits, soit de désigner un utilisateur existant. Ne crée aucun
   compte seul. Rappel : le chargé de projet ne voit pas la marge.
 
-#### E — Le dispositif et l'équipe
+#### E — Le dispositif, l'équipe et le matériel
 
-- Caméras, drone, son, lumière, régie.
-- Par rôle : titulaire + alternative, avec **coût jour** et **canal de coût**
-  (`timesheet` vs `vendor_bill`). Exemple : cadreur prestataire 25 000 F en feuille de temps,
+Deux volets, dans cet ordre. D'abord qui, avec quel rôle ; ensuite avec quoi.
+
+**E1 — Les membres de l'équipe et le rôle de chacun.**
+- Par rôle (`es.crew.role` : Réalisateur, Directeur photo, Cadreur, Assistant caméra,
+  Télépilote drone, Photographe, Ingénieur du son, Chef électricien, Chargé de
+  production, Assistant de production, Chauffeur, Monteur) : **un membre nommé +
+  son rôle + un remplaçant**, avec coût jour et canal de coût (`timesheet` vs
+  `vendor_bill`). Exemple : cadreur prestataire 25 000 F en feuille de temps,
   pilote drone Doulaye 45 000+5 000 en facture fournisseur.
-- Vérifier le **parc matériel** et les conflits de réservation (`es.equipment.booking`) au moment
-  de proposer le dispositif.
-- Classement : disponibilité → expérience du même type → tenue des délais → coût jour.
+- Source : `scripts/equipe.py --du … --au …` (disponibilité — congés `validate`,
+  affectations, indisponibilités — + expérience + tenue des délais + coût jour).
+  Classement : disponibilité → expérience du même type → tenue des délais → coût jour.
+- Chaque membre proposé est nommé avec son rôle (« Modeste Ahibo — Cadreur »),
+  jamais un rôle sans nom ni un nom sans rôle.
+
+**E2 — Le matériel à utiliser, listé via es_production.**
+- Lister d'abord via `scripts/equipe.py --du … --au … --materiel [--categorie …]` :
+  kits prédéfinis par usage (tournage Sony A7 III, Blackmagic 6K Pro, son reportage,
+  podcast, lumière studio/photo, lumière LED, régie multicam, mouvement, stabilisation,
+  fond studio, drone), puis exemplaires avec état, disponibles et conflits de
+  réservation sur la période.
+- Proposer par hypothèse : kits correspondant au type d'affaire + exemplaires clés
+  (boîtier, optique, son, lumière, drone, régie), en signalant les conflits
+  (`es.equipment.booking` en `draft`/`confirmed`/`out` qui chevauchent) et le hors
+  service (`broken`, ex. HF Sennheiser, stabilisateurs Feiyu) **sans bloquer**.
+- Ce qui n'est pas au parc (ou est indisponible) → location / prestataire, chiffré
+  en plus (produits 117/114/115, T&E ou facture fournisseur).
+- Rappel coût : le `day_rate` du parc est **indicatif** — il n'entre jamais dans le
+  coût réel (amortissement) ; seule une facture de sous-location compte.
 
 #### F — La logistique T&E par mission
 
@@ -109,8 +135,9 @@ Formulation : **hypothèse pré-remplie à confirmer**, pas page blanche.
 
 Une page, en français, que Lycris relit en une minute :
 
-- **Cadrage** : intention, dates/lieux (avec jours de semaine), livrables, dispositif, hors
-  périmètre, tours de correction, droits, risques.
+- **Cadrage** : intention, dates/lieux (avec jours de semaine), livrables, dispositif, équipe
+  (membre + rôle de chacun, remplaçants), matériel validé (kits + exemplaires + porteur),
+  dossier NAS (`/WORKS/<réf>/…`), hors périmètre, tours de correction, droits, risques.
 - **Tableau d'arbitrage** : lignes catalogue (Qté, PU, Total), forfait et T&E séparés, total
   vendu, coût de revient détaillé (équipe, prestataires externes, régie, location, commission),
   marge en F et en %, condition de paiement, hypothèses.
@@ -155,19 +182,27 @@ Dans cet ordre, chaque écriture annoncée ensuite avec son identifiant :
    prévision de trésorerie) — voir `references/es_finance.md`.
 7. **Production** : sessions (`es.shooting`), missions (`es.mission`) et leur logistique
    prévisionnelle, affectations (`es.crew.assignment`, `quantity = 1` par jour de cachet,
-   `day_rate` forcé avec `day_rate_is_override` tant que le défaut ×8 n'est pas corrigé), les
-   tâches par étape (Pré-production → Production → Post-production → Validation client →
+   `day_rate` forcé avec `day_rate_is_override` tant que le défaut ×8 n'est pas corrigé),
+   **réservations du matériel validé** (`es.equipment.booking` en `draft` : 1 par ligne
+   d'exemplaire + 1 par ligne de chaque kit validé, fenêtre = dates validées,
+   `holder_id` = chargé de mission par défaut, `conflict_warning` vérifié après création),
+   les tâches par étape (Pré-production → Production → Post-production → Validation client →
    Livré) et les **4 tâches satellites** par session (J−2 préparation/convocation, J captation,
    J+1 dérushage/sauvegarde, J+2 intégration) — voir `references/es_production.md`.
 8. **Responsables inscrits dans Odoo** : le chargé de projet sur `project.project.user_id`
    et sur `es.deal` si champ existe ; le chargé de mission sur chaque `es.mission`. Lire
    `fields_get` avant écriture. Gérer le cas prestataire sans compte `res.users`.
-9. **Feuilles de service** lisibles sur téléphone, et **activités de rappel** datées
-   (`mail.activity`) : relance acompte, confirmation prestataires, J−2, livraison, solde, FNE.
+9. **Arborescence NAS** (`/WORKS/`, racine par défaut — env `NAS_ROOT` pour surcharger) :
+   créer `/WORKS/<réf client>/<année>/<Projet>/01_creation … 05_rendus` via
+   `scaffold.init_projet` (jours de tournage → dossiers `Jxx_DATE_*`), puis consigner
+   `Dossier NAS: <réf>` dans les notes fiche client si la réf venait de la fiche.
+   Création de dossiers seulement — aucun fichier déplacé ni supprimé.
+10. **Feuilles de service** lisibles sur téléphone, et **activités de rappel** datées
+    (`mail.activity`) : relance acompte, confirmation prestataires, J−2, livraison, solde, FNE.
 
 Ordre de création : `crm.lead` → `sale.order` → `project.project`/`project.task` →
 `account.move` (brouillon) → `es.shooting`/`es.mission` → `es.crew.assignment` →
-activités.
+`es.equipment.booking` (brouillon, selon le validé) → dossier NAS `/WORKS` → activités.
 
 Toutes les écritures sont groupées : une seule validation pour tout le lot, jamais une
 validation par objet. Pour ce qui ne peut pas être exécuté (suppressions), passer par
@@ -185,6 +220,7 @@ s'adaptent aux affaires comparables trouvées) :
 - « Le client est [X — 3 commandes, dernière à 1,2 M, payée à J+12]. Je pars sur le même
   contact [Y] qui a validé la dernière fois, ou c'est un autre valideur ? » (choix cliquables)
 - « Fiche client incomplète : il manque RCCM et CC. Tu les as, ou je note à réclamer avant facture ? »
+- « Dossier NAS : [lu dans les notes : EXP-MOMENTUM → /WORKS/EXP-MOMENTUM/…] — je m'en sers, ou [pas de réf en notes] quel nom de dossier je crée ? » (proposer le nom sanitisé ; une fois validé, la réf est consignée dans les notes client)
 - « Apporteur d'affaires sur cette commande ? [Non / Oui : ___ — commission ___ F] »
 - « Condition de paiement : [70 % à la commande / 50 % / sans acompte] — je propose [70/30]
   vu [historique]. Tu confirmes ? »
@@ -209,11 +245,13 @@ s'adaptent aux affaires comparables trouvées) :
 - « Chargé de mission Grand-Bassam : [Modeste — dispo] / alt. [Jordan — en congé J-1]. Tu confirmes ? »
 - (Répété par mission s'il y a tournée.)
 
-**Série 5 — Dispositif et équipe**
+**Série 5 — Dispositif, équipe et matériel**
 - « Dispositif : [2 caméras + drone + son HF] comme Festival Abidjan + son. Tu valides ? »
-- « Cadreur 1 : [Modeste 25 000 F/j, timesheet, déjà sur Abidjan] / alt. [Jordan 20 000] »
-- « Drone : [Doulaye 50 000/j, vendor_bill, dispo] / alt. [externe X] »
-- « Matériel : [FX6 + ATEM dispo] — location [éclairage] 30 000 à ajouter ? »
+- « Cadreur 1 : [Modeste Ahibo — Cadreur, 25 000 F/j, timesheet, déjà sur Abidjan] / remplaçant [Jordan Anoh — Cadreur, 20 000] »
+- « Photo : [Bogui Jaures — Photographe, forfait 100 000] / remplaçant [Ayéhou Joël — Vidéaste] »
+- « Drone : [Doulaye — Télépilote drone, 50 000/j, vendor_bill, dispo] / alt. [externe X] »
+- « Matériel (listé via es_production) : kits [tournage Sony A7 III + drone Mavic 3 + son reportage]. Exemplaires : [Sony FX30 dispo + Mavic 3 Classic dispo + HF Sennheiser **hors service** → location HF à chiffrer]. Tu valides, tu retires, tu ajoutes ? »
+- « Porteur du matériel : [Modeste — chargé de mission] par défaut. OK ? »
 
 **Série 6 — Logistique T&E par mission**
 - « Grand-Bassam T&E : transport 40 000 + hébergement 60 000 + restauration 30 000 + fret 10 000

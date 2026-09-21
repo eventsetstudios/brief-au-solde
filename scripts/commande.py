@@ -16,7 +16,8 @@ Usage :
 
 Fiche JSON minimale attendue (tous les champs illustrés dans --exemple) :
 {
-  "client": {"id": 42, "nom": "EXP-MOMENTUM", "rccm": "", "cc": ""},
+  "client": {"id": 42, "nom": "EXP-MOMENTUM", "rccm": "", "cc": "",
+             "dossier_nas": "EXP-MOMENTUM"},
   "opportunite": {"id": null, "nom": "Festival X — 2 jours"},
   "apporteur": {"nom": null, "commission": 0},
   "cadrage": {"intention": "...", "type_affaire": "captation", "livrables": "...",
@@ -38,6 +39,18 @@ Fiche JSON minimale attendue (tous les champs illustrés dans --exemple) :
     {"role": "cadreur", "role_id": 1, "titulaire": {"employee_id": 1, "partner_id": null, "day_rate": 25000, "canal": "timesheet"}, "alternative": {...}},
     {"role": "drone", "role_id": 3, "titulaire": {"partner_id": 42, "day_rate": 50000, "canal": "vendor_bill"}}
   ],
+  "materiel": {
+    # kits validés (réservation en un clic) + lignes d'exemplaires validées
+    "kits": [{"kit_id": 1, "nom": "Kit tournage Sony A7 III"}],
+    "lignes": [
+      {"equipment_id": 151, "nom": "Sony FX30", "quantite": 1, "session": "J1 Abidjan",
+       "date_from": "2026-11-14 08:00:00", "date_to": "2026-11-14 18:00:00",
+       "porteur_user_id": 7, "note": ""},
+      {"equipment_id": 143, "nom": "Drone DJI Mavic 3 Classic", "quantite": 1, "mission": "Mission Grand-Bassam",
+       "date_from": "2026-11-13 08:00:00", "date_to": "2026-11-16 18:00:00",
+       "porteur_user_id": 7, "note": ""}
+    ]
+  },
   "argent": {
     "lignes": [
       {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 650000},
@@ -55,9 +68,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
+
+# Racine NAS par défaut : /WORKS/ (surchageable via env NAS_ROOT).
+NAS_ROOT = os.environ.get("NAS_ROOT", "/WORKS")
 
 # ------------------------------------------------------------------ exemple
 EXEMPLE = {
@@ -93,6 +110,17 @@ EXEMPLE = {
         {"role": "photographe", "role_id": 2, "titulaire": {"employee_id": 4, "partner_id": None, "day_rate": 20000, "canal": "timesheet", "nom": "Ayéhou Joël"}},
         {"role": "drone", "role_id": 3, "titulaire": {"employee_id": None, "partner_id": 42, "day_rate": 50000, "canal": "vendor_bill", "nom": "Doulaye"}},
     ],
+    "materiel": {
+        "kits": [{"kit_id": 1, "nom": "Kit tournage Sony A7 III"}],
+        "lignes": [
+            {"equipment_id": 151, "nom": "Sony FX30", "quantite": 1, "session": "J1 Grand-Bassam",
+             "date_from": "2026-11-14 08:00:00", "date_to": "2026-11-14 18:00:00",
+             "porteur_user_id": 7, "note": ""},
+            {"equipment_id": 143, "nom": "Drone DJI Mavic 3 Classic", "quantite": 1, "session": "J2 Grand-Bassam",
+             "date_from": "2026-11-15 08:00:00", "date_to": "2026-11-15 18:00:00",
+             "porteur_user_id": 7, "note": ""},
+        ],
+    },
     "argent": {
         "lignes": [
             {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 2, "pu": 650000},
@@ -112,6 +140,40 @@ EXEMPLE = {
 
 def _fcfa(v: float) -> str:
     return f"{int(round(v)):,}".replace(",", " ") + " F"
+
+
+def _sanitize_dossier(nom: str) -> str:
+    """Nom de dossier NAS : MAJUSCULES, espaces → _, reste [A-Z0-9_-]."""
+    import re
+    import unicodedata
+    txt = unicodedata.normalize("NFKD", (nom or "")).encode("ascii", "ignore").decode("ascii")
+    txt = re.sub(r"[\s]+", "_", txt.strip().upper())
+    txt = re.sub(r"[^A-Z0-9_-]", "", txt)
+    return re.sub(r"_+", "_", txt).strip("_")
+
+
+def _ref_nas_depuis_commentaire(commentaire: str | None) -> str | None:
+    """Référence dossier NAS lue dans les notes fiche client (ligne 'NAS: X' ou 'Dossier NAS: X')."""
+    import re
+    for ligne in (commentaire or "").splitlines():
+        m = re.match(r"\s*(?:dossier\s+)?nas\s*:\s*(.+?)\s*$", ligne, re.IGNORECASE)
+        if m and m.group(1):
+            return m.group(1)
+    return None
+
+
+def _dossier_nas_fiche(d: dict, commentaire_partenaire: str | None = None) -> tuple[str | None, str]:
+    """Résout le dossier client NAS : fiche d'abord, notes client ensuite.
+
+    Retourne (ref, origine) avec origine = 'fiche' | 'notes client' | 'non résolu'.
+    """
+    ref = (d.get("client") or {}).get("dossier_nas")
+    if ref:
+        return ref, "fiche"
+    ref = _ref_nas_depuis_commentaire(commentaire_partenaire)
+    if ref:
+        return ref, "notes client"
+    return None, "non résolu — demander le nom de dossier à Lycris"
 
 
 def _total_ht(lignes) -> float:
@@ -134,6 +196,11 @@ def _validate_fiche(d: dict) -> tuple[list[str], list[str]]:
     client = d.get("client") or {}
     if not d.get("client") or not d["client"].get("nom"):
         errs.append("client.nom manquant")
+    # Dossier NAS : si fixé dans la fiche, il doit être un nom de dossier valide
+    import re as _re
+    if client.get("dossier_nas") and not _re.fullmatch(r"[A-Za-z0-9 _-]+", client["dossier_nas"]):
+        errs.append(f"client.dossier_nas '{client['dossier_nas']}' invalide — proposer "
+                    f"'{_sanitize_dossier(client['dossier_nas'])}' (lettres, chiffres, espace, _ et -)")
     # Responsables obligatoires
     resp = d.get("responsables") or {}
     if not resp.get("charge_projet") or not resp["charge_projet"].get("user_id"):
@@ -174,6 +241,33 @@ def _validate_fiche(d: dict) -> tuple[list[str], list[str]]:
     # Sessions
     if not d.get("sessions"):
         errs.append("sessions vide — au moins 1 session requise")
+    # Matériel — lignes d'exemplaires validées (écriture es.equipment.booking au temps 3)
+    materiel = d.get("materiel") or {}
+    for ml in materiel.get("lignes") or []:
+        if not ml.get("equipment_id"):
+            errs.append(f"matériel '{ml.get('nom') or '?'}' sans equipment_id — "
+                        "lister via equipe.py --materiel, jamais deviner l'id")
+        if (ml.get("quantite") or 0) <= 0:
+            errs.append(f"matériel '{ml.get('nom') or ml.get('equipment_id')}' : "
+                        "quantité ≤ 0 — 1 minimum (à l'unité), N pour le quantitatif")
+        for champ in ("date_from", "date_to"):
+            if not ml.get(champ):
+                errs.append(f"matériel '{ml.get('nom') or ml.get('equipment_id')}' sans {champ} "
+                            "— fenêtre obligatoire (conflits calculés dessus)")
+        try:
+            if ml.get("date_from") and ml.get("date_to"):
+                a = datetime.strptime(ml["date_from"], "%Y-%m-%d %H:%M:%S")
+                b = datetime.strptime(ml["date_to"], "%Y-%m-%d %H:%M:%S")
+                if b <= a:
+                    errs.append(f"matériel '{ml.get('nom') or ml.get('equipment_id')}' : date_to <= date_from")
+        except ValueError:
+            errs.append(f"matériel '{ml.get('nom') or ml.get('equipment_id')}' : format date attendu AAAA-MM-JJ HH:MM:SS")
+        if not ml.get("porteur_user_id"):
+            warns.append(f"matériel '{ml.get('nom') or ml.get('equipment_id')}' sans porteur — "
+                         "holder_id (qui répond de l'unité) à désigner, chargé de mission par défaut")
+    for k in materiel.get("kits") or []:
+        if not k.get("kit_id"):
+            errs.append(f"kit '{k.get('nom') or '?'}' sans kit_id — lister via equipe.py --materiel")
     for s in d.get("sessions") or []:
         if not s.get("date_start") or not s.get("date_stop"):
             errs.append(f"session '{s.get('nom')}' sans date_start/stop")
@@ -370,6 +464,40 @@ def _plan(d: dict) -> dict:
         })
         seq += 1
 
+    # Réservations matériel (es.equipment.booking, brouillon) — selon le validé temps 2
+    materiel = d.get("materiel") or {}
+    for ml in materiel.get("lignes") or []:
+        ops.append({
+            "ordre": seq, "etape": "08-09 — Réservation matériel",
+            "modele": "es.equipment.booking", "action": "create (draft)",
+            "details": {
+                "equipment_id": ml.get("equipment_id"),
+                "nom": ml.get("nom"),
+                "quantite": ml.get("quantite") or 1,
+                "fenetre": f"{ml.get('date_from')} → {ml.get('date_to')}",
+                "session": ml.get("session") or "← première session",
+                "mission": ml.get("mission") or "",
+                "porteur_user_id": ml.get("porteur_user_id") or "← chargé de mission",
+                "note": ml.get("note") or "",
+            },
+            "garde_fou": "Créée en brouillon ; vérifier conflict_warning après création, "
+                         "signaler sans bloquer. day_rate indicatif jamais compté en coût réel.",
+        })
+        seq += 1
+    for k in materiel.get("kits") or []:
+        ops.append({
+            "ordre": seq, "etape": "08-09 — Kit matériel",
+            "modele": "es.equipment.booking (× lignes du kit)", "action": "create (draft, 1 par ligne du kit)",
+            "details": {
+                "kit_id": k.get("kit_id"),
+                "nom": k.get("nom"),
+                "note": "Un kit est un raccourci de saisie : 1 réservation brouillon par ligne de contenu, "
+                        "sur la fenêtre validée.",
+            },
+            "garde_fou": "Le kit n'est jamais réservé lui-même ; vérifier chaque ligne (état, conflits).",
+        })
+        seq += 1
+
     # Tâches par étape + satellites
     ops.append({
         "ordre": seq, "etape": "07 — Tâches",
@@ -397,6 +525,26 @@ def _plan(d: dict) -> dict:
     })
     seq += 1
 
+    # NAS — arborescence /WORKS (créée au temps 3 : création client ou commande validée)
+    ref_nas, origine_nas = _dossier_nas_fiche(d)
+    annee_nas = (date_cmd or datetime.now().strftime("%Y-%m-%d"))[:4]
+    dossier_projet_nas = _sanitize_dossier(opport.get("nom") or d.get("cadrage", {}).get("type_affaire") or "PROJET")
+    ops.append({
+        "ordre": seq, "etape": "NAS — Arborescence /WORKS",
+        "modele": "dossier NAS", "action": "mkdir -p (via scaffold.init_projet)",
+        "details": {
+            "racine": NAS_ROOT,
+            "dossier_client": ref_nas or "← À DEMANDER à Lycris (ni fiche ni notes client)",
+            "origine_dossier": origine_nas,
+            "chemin": f"{NAS_ROOT}/{ref_nas or '?CLIENT?'}/{annee_nas}/{dossier_projet_nas}/"
+                      "01_creation … 05_rendus",
+            "regle": "Si la réf n'existe pas dans les notes fiche client, demander le nom "
+                     "de dossier à Lycris ; si elle existe, s'en servir pour créer le reste.",
+        },
+        "garde_fou": "Création de dossiers seulement — aucun fichier déplacé ni supprimé.",
+    })
+    seq += 1
+
     # 8 — Feuilles de service + activités
     ops.append({
         "ordre": seq, "etape": "09 — Feuilles de service & rappels",
@@ -416,6 +564,10 @@ def _plan(d: dict) -> dict:
             "sessions": len(sessions),
             "missions": len(missions),
             "equipe_affectations": len(equipe),
+            "dossier_nas": f"{NAS_ROOT}/{ref_nas or '?CLIENT?'}/{annee_nas}/{dossier_projet_nas}/"
+                           f" (réf : {origine_nas})",
+            "materiel_reservations": len((d.get("materiel") or {}).get("lignes") or []),
+            "materiel_kits": len((d.get("materiel") or {}).get("kits") or []),
             "total_vendu_ht": vendu,
             "cout_revient": cout,
             "marge": f"{_fcfa(vendu - cout)} — {marge}%" if marge is not None else _fcfa(vendu - cout),
@@ -478,6 +630,7 @@ def _executer(d: dict, plan: dict):
     has_shooting = o.has_model("es.shooting")
     has_mission = o.has_model("es.mission")
     has_assignment = o.has_model("es.crew.assignment")
+    has_booking = o.has_model("es.equipment.booking")
     has_deal = o.has_model("es.deal")
 
     # 1 — Opportunité
@@ -731,6 +884,66 @@ def _executer(d: dict, plan: dict):
                 except Exception as e:
                     print(f"    ⚠  affectation {a.get('role')} / {tit.get('nom')} non créée: {e}")
 
+        # Réservations matériel validées (brouillon) — 1 booking par ligne + lignes des kits
+        materiel = d.get("materiel") or {}
+        if has_booking:
+            idx_session = {s.get("nom"): sid for s, sid in zip(sessions, shooting_ids)}
+            idx_mission = {m.get("nom"): mid for m, mid in zip(missions, mission_ids)} if has_mission and missions else {}
+            lignes_materiel = list(materiel.get("lignes") or [])
+            for k in materiel.get("kits") or []:
+                try:
+                    contenu = o.search_read("es.equipment.kit.line", [["kit_id", "=", int(k["kit_id"])]],
+                                            ["equipment_id", "quantity"], limit=50)
+                    for cl in contenu:
+                        eid = (cl.get("equipment_id") or [None])[0]
+                        if eid:
+                            lignes_materiel.append({
+                                "equipment_id": eid,
+                                "nom": (cl.get("equipment_id") or [None, "?"])[1],
+                                "quantite": cl.get("quantity") or 1,
+                                "date_from": (sessions[0].get("date_start") if sessions else None),
+                                "date_to": (sessions[-1].get("date_stop") if sessions else None),
+                                "porteur_user_id": (responsables.get("charges_mission") or [{}])[0].get("user_id"),
+                                "note": f"issu du kit {k.get('nom')}",
+                            })
+                except Exception as e:
+                    print(f"    ⚠  kit {k.get('nom')} non déplié: {e}")
+            for ml in lignes_materiel:
+                vals = {
+                    "equipment_id": int(ml["equipment_id"]),
+                    "project_id": int(project_id),
+                    "quantity": int(ml.get("quantite") or 1),
+                    "date_from": ml.get("date_from"),
+                    "date_to": ml.get("date_to"),
+                    "state": "draft",
+                    "note": ml.get("note") or "",
+                }
+                if ml.get("session") and ml["session"] in idx_session:
+                    vals["shooting_id"] = idx_session[ml["session"]]
+                elif shooting_ids:
+                    vals["shooting_id"] = shooting_ids[0]
+                if ml.get("mission") and ml["mission"] in idx_mission:
+                    vals["mission_id"] = idx_mission[ml["mission"]]
+                if ml.get("porteur_user_id"):
+                    vals["holder_id"] = int(ml["porteur_user_id"])
+                vals = {k2: v for k2, v in vals.items() if v is not None and v != ""}
+                try:
+                    eq = o.search_read("es.equipment", [["id", "=", int(ml["equipment_id"])]],
+                                       ["name", "is_available", "state"], limit=1)
+                    if eq and not eq[0].get("is_available"):
+                        print(f"    ⚠  {eq[0].get('name')} indisponible (état {eq[0].get('state')}) — réservation quand même posée en brouillon, à arbitrer")
+                    bid = o.kw("es.equipment.booking", "create", [vals])
+                    _log("es.equipment.booking (draft)", bid,
+                         f"{ml.get('nom')} ×{vals.get('quantity')} {vals.get('date_from')}→{vals.get('date_to')}")
+                    cw = o.search_read("es.equipment.booking", [["id", "=", bid]],
+                                       ["conflict_warning"], limit=1)
+                    if cw and cw[0].get("conflict_warning"):
+                        print(f"    ⚠  conflit : {cw[0]['conflict_warning']}")
+                except Exception as e:
+                    print(f"    ⚠  réservation {ml.get('nom')} non créée: {e}")
+        elif materiel.get("lignes") or materiel.get("kits"):
+            print("  ○ réservations matériel non créées (modèle es.equipment.booking absent)")
+
         # Tâches satellites (si project_id)
         for sid in shooting_ids:
             for offset, label in [(-2, "J−2 Préparation / convocation"), (0, "J Captation"), (1, "J+1 Dérushage / sauvegarde"), (2, "J+2 Intégration")]:
@@ -766,6 +979,49 @@ def _executer(d: dict, plan: dict):
                     print(f"    → utilisateur {responsables['charge_projet']['user_id']} sans compte res.users — proposer ouverture d'accès ou utilisateur existant, ne pas créer de compte seul")
             except Exception:
                 pass
+
+    # NAS — arborescence /WORKS (création client ou commande validée)
+    try:
+        import importlib.util as _ilu
+        _spec = importlib.util.spec_from_file_location(
+            "scaffold", str(Path(__file__).parent / "scaffold.py"))
+        _scaffold = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_scaffold)
+        commentaire = None
+        if client.get("id"):
+            partenaires = o.search_read("res.partner", [["id", "=", int(client["id"])]],
+                                        ["comment"], limit=1)
+            commentaire = (partenaires[0].get("comment") or None) if partenaires else None
+        ref_nas, origine_nas = _dossier_nas_fiche(d, commentaire)
+        if not ref_nas:
+            print("  ○ arborescence NAS non créée — réf dossier absente (ni fiche ni notes client) : "
+                  "demander le nom de dossier à Lycris, puis relancer")
+        else:
+            annee_exec = (date_cmd or datetime.now().strftime("%Y-%m-%d"))[:4]
+            dossier_projet_exec = _sanitize_dossier(
+                opport.get("nom") or d.get("cadrage", {}).get("type_affaire") or "PROJET")
+            jours_exec = sorted({(s.get("date_start") or "")[:10] for s in sessions if s.get("date_start")})
+            base_nas = Path(NAS_ROOT) / ref_nas / annee_exec / dossier_projet_exec
+            try:
+                res_nas = _scaffold.init_projet(
+                    Path(NAS_ROOT), ref_nas, dossier_projet_exec, annee_exec,
+                    jours_exec, appliquer=True)
+                _log("dossier NAS", str(base_nas),
+                     f"{res_nas['dossiers_crees']} dossiers (réf {origine_nas})")
+            except Exception as e:
+                print(f"    ⚠  arborescence NAS non créée ({NAS_ROOT} inaccessible ?) : {e}")
+                print(f"    → recréer avec : scaffold.py --init --client {ref_nas} "
+                      f"--projet {dossier_projet_exec} --root {NAS_ROOT} --appliquer")
+            # Consigne la réf dans les notes fiche client si elle vient de la fiche
+            if client.get("id") and (d.get("client") or {}).get("dossier_nas") and origine_nas == "fiche":
+                try:
+                    o.kw("res.partner", "write", [[int(client["id"])], {
+                        "comment": ((commentaire or "") + f"\nDossier NAS: {ref_nas}").strip()}])
+                    print(f"  ✓ notes client ← Dossier NAS: {ref_nas}")
+                except Exception as e:
+                    print(f"    ⚠  notes client non mises à jour: {e}")
+    except Exception as e:
+        print(f"    ⚠  étape NAS ignorée: {e}")
 
     # 8 — Activités de rappel
     if project_id:

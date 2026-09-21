@@ -1,0 +1,42 @@
+{
+  "cas": "Équipe nommée par rôle + matériel listé via es_production puis réservé selon le validé",
+  "attendu": "2 membres nommés avec rôle + remplaçants, 1 kit + 2 exemplaires validés → 3 ops booking draft au plan, porteur désigné, HF hors service signalée en location",
+  "fiche": {
+    "client": {"id": 832, "nom": "EXP-MOMENTUM COTE D'IVOIRE", "rccm": "CI-ABJ-2020-B-12345", "cc": "1234567A", "adresse": "Abidjan Cocody"},
+    "opportunite": {"id": null, "nom": "Interview plateau — 1 jour — Abidjan", "revenu_attendu": 650000, "probabilite": 90, "date_cloture": "2026-10-15"},
+    "apporteur": {"nom": null, "commission": 0},
+    "cadrage": {"intention": "Interview plateau 2 caméras + son HF pour diffusion réseaux", "type_affaire": "captation", "livrables": "Interview montée 5 min, J+3", "droits": "Réseaux 12 mois", "corrections_inclus": 2, "hors_perimetre": "Habillage 3D"},
+    "sessions": [{"nom": "J1 Plateau", "date_start": "2026-10-20 08:00:00", "date_stop": "2026-10-20 18:00:00", "lieu": "Studio Riviera", "ville": "Abidjan", "type": "tournage"}],
+    "missions": [],
+    "responsables": {"charge_projet": {"user_id": 5, "nom": "Frédéric N'guessan"}, "charges_mission": []},
+    "equipe": [
+      {"role": "Cadreur", "role_id": 3, "titulaire": {"employee_id": 1, "day_rate": 25000, "canal": "timesheet", "nom": "Modeste Ahibo"}, "alternative": {"employee_id": 2, "day_rate": 20000, "nom": "Jordan Anoh"}},
+      {"role": "Ingénieur du son", "role_id": 7, "titulaire": {"employee_id": 3, "day_rate": 20000, "canal": "timesheet", "nom": "Ayéhou Joël"}, "alternative": {"partner_id": 42, "day_rate": 25000, "nom": "Prestataire son"}}
+    ],
+    "materiel": {
+      "kits": [{"kit_id": 3, "nom": "Kit son reportage"}],
+      "lignes": [
+        {"equipment_id": 151, "nom": "Sony FX30", "quantite": 1, "session": "J1 Plateau", "date_from": "2026-10-20 08:00:00", "date_to": "2026-10-20 18:00:00", "porteur_user_id": 5, "note": ""},
+        {"equipment_id": 143, "nom": "Drone DJI Mavic 3 Classic", "quantite": 1, "session": "J1 Plateau", "date_from": "2026-10-20 08:00:00", "date_to": "2026-10-20 18:00:00", "porteur_user_id": 5, "note": "plans d'illustration"}
+      ]
+    },
+    "argent": {
+      "lignes": [
+        {"product_id": 107, "designation": "Captation / couverture d'événement", "qte": 1, "pu": 650000},
+        {"product_id": 114, "designation": "Location HF (Sennheiser HS — parc hors service)", "qte": 1, "pu": 50000}
+      ],
+      "condition_paiement_id": 27,
+      "taux_tva": 0,
+      "cout_revient": 95000,
+      "notes": "HF du parc hors service (broken) → location chiffrée. TVA 0."
+    },
+    "options": {"confirmer_commande": false, "creer_facture_acompte": false, "date_commande": "2026-10-20", "validite_jours": 30}
+  },
+  "verifications": [
+    "plan.resume.equipe_affectations == 2 avec membre + role_id renseignés",
+    "plan.resume.materiel_reservations == 2 et materiel_kits == 1",
+    "plan.operations contient 2 ops es.equipment.booking (draft) + 1 op kit (× lignes)",
+    "chaque booking porte equipment_id, fenêtre, porteur_user_id",
+    "plan.validations == [] (fiche validable)"
+  ]
+}

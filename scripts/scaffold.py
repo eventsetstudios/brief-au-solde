@@ -4,9 +4,9 @@
 Standard : references/production.md. Tout est simulé par défaut (--dry-run) ;
 --appliquer écrit réellement (dossiers, déplacements de fichiers).
 
-Usage :
+Usage (racine NAS par défaut : /WORKS/, env NAS_ROOT pour surcharger) :
     python3 scaffold.py --init --client NESTLE --projet MAGGI_TVC --annee 2026
-    python3 scaffold.py --init --client X --projet Y --jours 2026-11-14,2026-11-15 --root /Volumes/NAS
+    python3 scaffold.py --init --client X --projet Y --jours 2026-11-14,2026-11-15 --root /tmp/test
     python3 scaffold.py --trier rush001.BRAW V01_export.mp4 --client X --projet Y
     python3 scaffold.py --trier f.mp4 --client X --projet Y --appliquer
     python3 scaffold.py --verifier-nom NESTLE_MAGGI_TVC_V1_2026-09-21.mp4
@@ -17,11 +17,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
 from datetime import date
 from pathlib import Path
+
+# Racine NAS par défaut : /WORKS/ (surchageable via env NAS_ROOT).
+DEFAULT_NAS_ROOT = os.environ.get("NAS_ROOT", "/WORKS")
 
 TREE = [
     "01_creation/01_brief_refs",
@@ -202,7 +206,8 @@ def main() -> None:
     ap.add_argument("--annee", default="2026")
     ap.add_argument("--jours", default="",
                     help="dates de tournage séparées par des virgules (AAAA-MM-JJ)")
-    ap.add_argument("--root", default=".", help="racine NAS (défaut : répertoire courant)")
+    ap.add_argument("--root", default=DEFAULT_NAS_ROOT,
+                    help=f"racine NAS (défaut : {DEFAULT_NAS_ROOT}, env NAS_ROOT)")
     ap.add_argument("--trier", nargs="*", default=None)
     ap.add_argument("--verifier-nom", nargs="*", default=None)
     ap.add_argument("--statut", action="store_true")

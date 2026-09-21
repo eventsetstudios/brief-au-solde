@@ -98,11 +98,12 @@ complet est dans `references/workflow-commande.md`.
 **Temps 1 — Préparer par questions.** Lire Odoo (fiche client, factures ouvertes, affaires
 comparables, dispos). Poser les questions **par séries de 4 à 6**, en réponses cliquables,
 chacune comme **hypothèse pré-remplie à confirmer**. Séries dans l'ordre : client et
-commercial → le travail (intention, livrables, droits, corrections, hors périmètre) →
+commercial (dont réf dossier NAS lue dans les notes, ou nom demandé) → le travail (intention, livrables, droits, corrections, hors périmètre) →
 calendrier/lieux (avec jour de la semaine, une mission par lieu hors Abidjan) →
 **responsables — question obligatoire, jamais sautée** (1 chargé de projet toujours, 1 chargé
-de mission par mission) → dispositif et équipe (titulaire + alternative par rôle, coût jour et
-canal) → logistique T&E par mission (pas de per diem, au réel d'une étape comparable) →
+de mission par mission) → dispositif, équipe et matériel (membre + rôle de chacun avec
+remplaçant, coût jour et canal ; kits et exemplaires listés via es_production avec dispos
+et conflits, location si hors parc) → logistique T&E par mission (pas de per diem, au réel d'une étape comparable) →
 l'argent (prix, coût de revient, marge, condition de paiement). Produire une **fiche commande**
 d'une page + tableau d'arbitrage (forfait et T&E sur deux lignes distinctes).
 
@@ -112,9 +113,11 @@ liste exacte de ce qu'il va écrire et attend un « oui ».
 **Temps 3 — La cascade** (dans l'ordre, chaque écriture annoncée avec son identifiant) :
 opportunité CRM → devis → confirmation → facture d'acompte (brouillon) → `es.deal` / journal
 → budget es_finance → sessions / missions / affectations (`quantity=1`, `day_rate` avec
-`day_rate_is_override`) / tâches par étape + 4 tâches satellites par session → responsables
+`day_rate_is_override`) / réservations du matériel validé (`es.equipment.booking` en brouillon)
+/ tâches par étape + 4 tâches satellites par session → responsables
 inscrits (`project.project.user_id` + `es.mission` — `fields_get` avant d'écrire, signaler si
-pas de compte Odoo) → feuilles de service + activités de rappel. Voir `references/workflow-commande.md`.
+pas de compte Odoo) → arborescence NAS `/WORKS/<réf>/<année>/<Projet>` →
+feuilles de service + activités de rappel. Voir `references/workflow-commande.md`.
 
 ---
 
@@ -204,11 +207,18 @@ Tâches (07) : Pré-production → Production → Post-production → Validation
 chacune avec livrable et échéance (voir `references/es_production.md` : 4 tâches satellites
 par session J−2/J/J+1/J+2).
 
-Équipe (08-09) : `scripts/equipe.py` propose par rôle un titulaire + une alternative
-(disponibilité — congés `validate`, affectations, indisponibilités — + expérience + tenue des
-délais + coût jour). Signaler les conflits sans bloquer. **Double comptage** : une seule voie
-porte le coût (feuille de temps **ou** facture fournisseur — coût jour à 0 = montage facture).
+Équipe (08-09) : `scripts/equipe.py` propose par rôle un membre nommé + son rôle +
+un remplaçant (disponibilité — congés `validate`, affectations, indisponibilités — +
+expérience + tenue des délais + coût jour). Signaler les conflits sans bloquer.
+**Double comptage** : une seule voie porte le coût (feuille de temps **ou** facture
+fournisseur — coût jour à 0 = montage facture).
 Convention : 1 journée de tournage = 1 jour de feuille de temps (tarif forfaitaire).
+
+Matériel (08-09) : `scripts/equipe.py --materiel` liste kits et exemplaires via
+es_production (état, disponibles, conflits sur la période). Le questionnaire fait valider
+kits + exemplaires + porteur ; le temps 3 écrit `es.equipment.booking` en brouillon selon
+le validé (`conflict_warning` vérifié après création). Hors parc ou hors service →
+location chiffrée en plus. `day_rate` du parc = indicatif, jamais dans le coût réel.
 
 Responsables : toujours un **chargé de projet** ; un **chargé de mission par mission** dès
 qu'il y a un déplacement hors Abidjan (voir `references/workflow-commande.md`). La fiche
